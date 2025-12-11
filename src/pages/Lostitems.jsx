@@ -466,15 +466,21 @@ export default function LostItems() {
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header Navigation */}
         <div className="flex items-center justify-between mb-6">
-          <button
-            onClick={() => window.history.back()}
-            className="flex items-center gap-2 text-[#850303] hover:text-[#850303] font-semibold transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 rounded-full bg-white shadow-md overflow-hidden border border-[#850303]/40">
+              <img src="/foundcloud-logo.svg" alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
+            </div>
+            <span className="text-xl font-bold text-[#850303]">FoundCloud</span>
+            <button
+              onClick={() => window.history.back()}
+              className="flex items-center gap-2 text-[#850303] hover:text-[#850303] font-semibold transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
+          </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowClaimsModal(true)}

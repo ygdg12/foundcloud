@@ -342,10 +342,14 @@ export default function Signup() {
         <div className="hidden lg:flex items-center min-h-screen">
           <div className="flex flex-col space-y-8 max-w-2xl">
             <div className="space-y-4">
-              <h1 className="text-6xl font-black text-[#850303] tracking-tight text-balance">
-                Lost Items Reporting and Searching
-                <span className="block text-[#850303]"></span>
-              </h1>
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-full bg-white shadow-lg overflow-hidden border border-[#850303]/40">
+                  <img src="/foundcloud-logo.svg" alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
+                </div>
+                <h1 className="text-6xl font-black text-[#850303] tracking-tight text-balance">
+                  FoundCloud
+                </h1>
+              </div>
               <p className="text-xl text-black leading-relaxed">
                 Secure, efficient reporting and recovery of lost items on campus. Join our community-driven platform to
                 help reunite students with their belongings.

@@ -229,10 +229,13 @@ export default function HomePage() {
               className="flex items-center space-x-3 cursor-pointer group"
               onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}
             >
-              <div className="h-10 w-10 bg-gradient-to-br from-white to-red-50 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 shadow-lg">
-                <svg className="h-6 w-6 text-red-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
+              <div className="h-12 w-12 rounded-full bg-white/70 shadow-lg overflow-hidden border border-white/60 transition-all duration-300 group-hover:scale-110 group-hover:rotate-1">
+                <img
+                  src="/foundcloud-logo.svg"
+                  alt="FoundCloud logo"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
               </div>
               <div className="flex flex-col">
                 <span className="text-xl sm:text-2xl font-bold text-white tracking-tight group-hover:text-red-50 transition-colors duration-300">

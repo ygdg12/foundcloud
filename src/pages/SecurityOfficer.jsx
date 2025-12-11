@@ -136,7 +136,13 @@ export default function SecurityOfficer() {
       <div className="bg-gradient-to-r from-red-900 to-red-800 text-white shadow-lg relative z-20">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-white/70 shadow-lg overflow-hidden border border-white/60">
+                  <img src="/foundcloud-logo.svg" alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
+                </div>
+                <span className="text-xl font-bold tracking-tight">FoundCloud</span>
+              </div>
               <button
                 onClick={() => navigate("/")}
                 className="flex items-center gap-2 hover:text-red-200 transition-colors"

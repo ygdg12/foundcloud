@@ -1,0 +1,30 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FoundCloud logo">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#f8f8f8"/>
+      <stop offset="45%" stop-color="#e9eaec"/>
+      <stop offset="100%" stop-color="#c7c9cc"/>
+    </radialGradient>
+    <linearGradient id="fcFill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b9242b"/>
+      <stop offset="50%" stop-color="#8f1119"/>
+      <stop offset="100%" stop-color="#6e0d12"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feOffset dy="8" in="SourceAlpha" result="off"/>
+      <feGaussianBlur stdDeviation="10" in="off" result="blur"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0" in="blur" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <circle cx="256" cy="256" r="220" fill="url(#bg)"/>
+  <ellipse cx="256" cy="352" rx="118" ry="26" fill="#000" opacity=".15"/>
+  <g filter="url(#shadow)" transform="translate(86 104)">
+    <path d="M82 12h164c18 0 34 14 34 34v92h-62V70H132v178c0 16 8 30 24 30 18 0 28-12 28-30v-44h62v40c0 46-30 84-90 84-62 0-96-40-96-96V46C60 26 66 12 82 12Z" fill="url(#fcFill)" stroke="#0b0b0b" stroke-width="14" stroke-linejoin="round"/>
+    <path d="M260 12h54c18 0 32 14 32 34v138c0 20-14 34-32 34h-54v-62h38V70h-38V12Z" fill="url(#fcFill)" stroke="#0b0b0b" stroke-width="14" stroke-linejoin="round"/>
+  </g>
+</svg>
+
