@@ -262,14 +262,13 @@ export default function HomePage() {
               <div className="ml-3 pl-3 border-l border-red-700">
                 <button 
                   onClick={handleSearch}
-                  className="bg-gradient-to-r from-white via-red-50 to-white text-red-900 px-5 py-2.5 rounded-xl font-bold hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg flex items-center space-x-2 group overflow-hidden relative"
+                  className="bg-gradient-to-r from-white via-red-50 to-white text-red-900 p-2.5 sm:px-5 sm:py-2.5 rounded-xl font-bold hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg flex items-center justify-center group overflow-hidden relative"
+                  aria-label="Search Items"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></span>
-                  <svg className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-12 transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  <span className="relative z-10 hidden lg:inline">Search Items</span>
-                  <span className="relative z-10 lg:hidden">Search</span>
                 </button>
               </div>
               <div className="ml-3 pl-3 border-l border-red-700">
@@ -284,6 +283,15 @@ export default function HomePage() {
             
             {/* Mobile menu button */}
             <div className="md:hidden flex items-center gap-2">
+              <button
+                onClick={handleSearch}
+                className="text-white bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-all duration-200"
+                aria-label="Search Items"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
               <button
                 onClick={handleSignOut}
                 className="text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-all duration-200"

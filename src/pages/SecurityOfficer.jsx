@@ -134,48 +134,57 @@ export default function SecurityOfficer() {
 
       {/* Header */}
       <div className="bg-gradient-to-r from-red-900 to-red-800 text-white shadow-lg relative z-20">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-white/70 shadow-lg overflow-hidden border border-white/60">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-white/70 shadow-lg overflow-hidden border border-white/60 flex-shrink-0">
                   <img src="/foundcloud-logo.svg" alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
                 </div>
-                <span className="text-xl font-bold tracking-tight">FoundCloud</span>
+                <span className="text-base sm:text-xl font-bold tracking-tight truncate">FoundCloud</span>
               </div>
               <button
                 onClick={() => navigate("/")}
-                className="flex items-center gap-2 hover:text-red-200 transition-colors"
+                className="hidden sm:flex items-center gap-2 hover:text-red-200 transition-colors flex-shrink-0"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
                 <span className="font-medium">Home</span>
               </button>
+              <button
+                onClick={() => navigate("/")}
+                className="sm:hidden p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+                aria-label="Home"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+              </button>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
               <button
                 onClick={() => {
                   localStorage.removeItem("authToken")
                   localStorage.removeItem("user")
                   navigate("/signin")
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-red-900 rounded-lg font-semibold hover:bg-red-50 transition-all duration-200 shadow-md hover:shadow-lg"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-white text-red-900 rounded-lg font-semibold hover:bg-red-50 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-12 relative z-10">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-black">Security Officer</h1>
-          <p className="text-gray-600 mt-2">Review and manage item claims.</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12 relative z-10">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-black">Security Officer</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">Review and manage item claims.</p>
         </div>
 
         {/* Stats Cards (similar to Admin) */}
@@ -272,9 +281,9 @@ export default function SecurityOfficer() {
                     <div key={claimId} className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
                       hasMatchingItem ? "border-green-400 bg-green-50/30" : "border-gray-200"
                     }`}>
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-black mb-2">{item?.title || "Item Claim"}</h3>
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-lg font-semibold text-black mb-2 break-words">{item?.title || "Item Claim"}</h3>
                           <div className={`mb-3 p-3 rounded-lg border ${
                             hasMatchingItem 
                               ? "bg-green-100 border-green-300" 
@@ -309,18 +318,18 @@ export default function SecurityOfficer() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                           {claim.status === "pending" ? (
                             <>
                               <button
                                 disabled={updatingId === claimId}
                                 onClick={() => updateClaimStatus(claimId, "approved")}
-                                className="px-3 py-1.5 rounded-md bg-green-600 text-white text-sm disabled:opacity-60"
+                                className="px-2 sm:px-3 py-1.5 rounded-md bg-green-600 text-white text-xs sm:text-sm disabled:opacity-60 whitespace-nowrap"
                               >{updatingId === claimId ? "Updating..." : "Approve"}</button>
                               <button
                                 disabled={updatingId === claimId}
                                 onClick={() => updateClaimStatus(claimId, "rejected")}
-                                className="px-3 py-1.5 rounded-md bg-red-600 text-white text-sm disabled:opacity-60"
+                                className="px-2 sm:px-3 py-1.5 rounded-md bg-red-600 text-white text-xs sm:text-sm disabled:opacity-60 whitespace-nowrap"
                               >{updatingId === claimId ? "Updating..." : "Reject"}</button>
                               {actionStatus[claimId] && (
                                 <span
