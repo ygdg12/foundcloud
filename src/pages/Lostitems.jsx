@@ -14,6 +14,7 @@ const BASE_URL =
   process.env.REACT_APP_BASE_URL ||
   "https://lost-items-backend-q30o.onrender.com"
 const CLAIMS_URL = (import.meta?.env?.VITE_CLAIMS_API_URL || process.env.REACT_APP_CLAIMS_API_URL) || `${BASE_URL}/api/claims`
+const LOGO_SRC = "/foundcloud-logo.svg?v=2"
 
 export default function LostItems() {
   const navigate = useNavigate()
@@ -478,7 +479,7 @@ export default function LostItems() {
             </button>
             <div className="flex items-center gap-2 flex-shrink-0">
               <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-white shadow-md overflow-hidden border border-[#850303]/40">
-                <img src="/foundcloud-logo.svg" alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
+                <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
               </div>
               <span className="hidden sm:inline text-lg font-bold text-[#850303]">FoundCloud</span>
             </div>

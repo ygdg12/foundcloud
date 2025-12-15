@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom";
 
+const LOGO_SRC = "/foundcloud-logo.svg?v=2"
+
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)
   const [animatedStats, setAnimatedStats] = useState({ items: 0, users: 0, success: 0 })
@@ -231,7 +233,7 @@ export default function HomePage() {
             >
               <div className="h-12 w-12 rounded-full bg-white/70 shadow-lg overflow-hidden border border-white/60 transition-all duration-300 group-hover:scale-110 group-hover:rotate-1">
                 <img
-                  src="/foundcloud-logo.svg"
+                  src={LOGO_SRC}
                   alt="FoundCloud logo"
                   className="h-full w-full object-cover"
                   loading="lazy"

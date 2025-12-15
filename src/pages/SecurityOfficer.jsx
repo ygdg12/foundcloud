@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
+const LOGO_SRC = "/foundcloud-logo.svg?v=2"
+
 const BASE_URL =
   import.meta.env?.VITE_BASE_URL ||
   process.env.REACT_APP_BASE_URL ||
@@ -139,7 +141,7 @@ export default function SecurityOfficer() {
             <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-white/70 shadow-lg overflow-hidden border border-white/60 flex-shrink-0">
-                  <img src="/foundcloud-logo.svg" alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
+                  <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
                 </div>
                 <span className="text-base sm:text-xl font-bold tracking-tight truncate">FoundCloud</span>
               </div>

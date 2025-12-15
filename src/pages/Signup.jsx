@@ -22,6 +22,7 @@ const BASE_URL =
   import.meta.env?.VITE_BASE_URL ||
   process.env.REACT_APP_BASE_URL ||
   "https://lost-items-backend-q30o.onrender.com"
+const LOGO_SRC = "/foundcloud-logo.svg?v=2"
 
 // Constants for validation
 const VALIDATION_RULES = {
@@ -344,7 +345,7 @@ export default function Signup() {
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <div className="h-14 w-14 rounded-full bg-white shadow-lg overflow-hidden border border-[#850303]/40">
-                  <img src="/foundcloud-logo.svg" alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
+                  <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
                 </div>
                 <h1 className="text-6xl font-black text-[#850303] tracking-tight text-balance">
                   FoundCloud
