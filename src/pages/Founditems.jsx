@@ -113,38 +113,38 @@ export default function FoundItems() {
   const fetchItems = async () => {
     try {
       const token = localStorage.getItem("authToken")
-      const headers = {}
-      if (token) {
-        headers.Authorization = `Bearer ${token}`
+      const response = await fetch(`${BASE_URL}/api/found-items`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        const normalizedItems = (data.items || []).map((item) => {
+          const normalizedImages = item.images
+            ? item.images.map((img) => {
+                const filename = img.split("/").pop()
+                const normalizedPath = `/uploads/found-items/${filename}`
+                console.log(`Normalizing image: ${img} -> ${normalizedPath}`)
+                return normalizedPath
+              })
+            : []
+          return {
+            ...item,
+            contactEmail: item.contactEmail ?? "",
+            contactPhone: item.contactPhone ?? "",
+            images: normalizedImages,
+          }
+        })
+        console.log("Normalized items:", normalizedItems)
+        setItems(normalizedItems)
+      } else {
+        const errorData = await response.json()
+        const errorMessage = errorData.message || "Failed to load items"
+        console.error("Error fetching items:", errorData)
+        showNotification(errorMessage, "error")
       }
-      const res = await axios.get(API_URL, { headers })
-      
-      console.log("Fetched items:", res.data.items)
-      const normalizedItems = (res.data.items || []).map((item) => {
-        const normalizedImages = item.images
-          ? item.images.map((img) => {
-              const filename = img.split("/").pop()
-              const normalizedPath = `/uploads/found-items/${filename}`
-              console.log(`Normalizing image: ${img} -> ${normalizedPath}`)
-              return normalizedPath
-            })
-          : []
-        return {
-          ...item,
-          contactEmail: item.contactEmail ?? "",
-          contactPhone: item.contactPhone ?? "",
-          images: normalizedImages,
-        }
-      })
-      console.log("Normalized items:", normalizedItems)
-      setItems(normalizedItems)
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || "Failed to load items"
-      console.error("Error fetching items:", {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-      })
+      const errorMessage = err.message || "Failed to load items"
+      console.error("Error fetching items:", err)
       showNotification(errorMessage, "error")
     }
   }
