@@ -307,15 +307,23 @@ export default function FoundItems() {
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header Navigation */}
         <div className="flex items-center justify-between mb-6 gap-2 sm:gap-4">
-          <button
-            onClick={() => window.history.back()}
-            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-[#850303] hover:text-[#700202] font-semibold transition-colors flex-shrink-0"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="hidden sm:inline">Back</span>
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <button
+              onClick={() => window.history.back()}
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-[#850303] hover:text-[#700202] font-semibold transition-colors flex-shrink-0"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="hidden sm:inline">Back</span>
+            </button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-white shadow-md overflow-hidden border border-[#850303]/40">
+                <img src="/foundcloud-logo.svg" alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
+              </div>
+              <span className="hidden sm:inline text-lg font-bold text-[#850303]">FoundCloud</span>
+            </div>
+          </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <button
               onClick={() => setShowClaimsModal(true)}
