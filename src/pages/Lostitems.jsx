@@ -478,7 +478,7 @@ export default function LostItems() {
               <span className="hidden sm:inline">Back</span>
             </button>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-white shadow-md overflow-hidden border border-[#850303]/40">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white shadow-md overflow-hidden border border-[#850303]/40">
                 <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
               </div>
               <span className="hidden sm:inline text-lg font-bold text-[#850303]">FoundCloud</span>
