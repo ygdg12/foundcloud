@@ -119,19 +119,12 @@ export default function FoundItems() {
       if (response.ok) {
         const data = await response.json()
         const normalizedItems = (data.items || []).map((item) => {
-          const normalizedImages = item.images
-            ? item.images.map((img) => {
-                const filename = img.split("/").pop()
-                const normalizedPath = `/uploads/found-items/${filename}`
-                console.log(`Normalizing image: ${img} -> ${normalizedPath}`)
-                return normalizedPath
-              })
-            : []
           return {
             ...item,
             contactEmail: item.contactEmail ?? "",
             contactPhone: item.contactPhone ?? "",
-            images: normalizedImages,
+            // Keep images as-is from backend (same as Admin portal)
+            images: item.images || [],
           }
         })
         console.log("Normalized items:", normalizedItems)
@@ -824,14 +817,15 @@ export default function FoundItems() {
                   }`}
                 >
                   {/* Item Images */}
-                  {item.images && item.images.length > 0 ? (
+                  {item.images && item.images.length > 0 && item.images[0] ? (
                     <div className={`${viewMode === "list" ? "w-full sm:w-64 h-48" : "h-48"} relative overflow-hidden`}>
                       <img
-                        src={`${BASE_URL}${item.images[0]}`}
+                        src={item.images[0].startsWith("http") ? item.images[0] : `${BASE_URL}${item.images[0]}`}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         onError={(e) => {
-                          console.error(`Failed to load image: ${BASE_URL}${item.images[0]}`)
+                          const imageUrl = item.images[0]?.startsWith("http") ? item.images[0] : `${BASE_URL}${item.images[0] || ""}`
+                          console.error(`Failed to load image: ${imageUrl}`)
                           // Use a reliable external placeholder to avoid 404s in dev
                           e.currentTarget.onerror = null
                           e.currentTarget.src = "https://via.placeholder.com/800x600?text=No+Image"
