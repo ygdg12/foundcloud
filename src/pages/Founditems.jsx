@@ -306,40 +306,35 @@ export default function FoundItems() {
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header Navigation */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-white shadow-md overflow-hidden border border-[#850303]/40">
-              <img src="/foundcloud-logo.svg" alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
-            </div>
-            <span className="text-xl font-bold text-[#850303]">FoundCloud</span>
-            <button
-              onClick={() => window.history.back()}
-              className="flex items-center gap-2 text-[#850303] hover:text-[#850303] font-semibold transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
-            </button>
-          </div>
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between mb-6 gap-2 sm:gap-4">
+          <button
+            onClick={() => window.history.back()}
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-[#850303] hover:text-[#700202] font-semibold transition-colors flex-shrink-0"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="hidden sm:inline">Back</span>
+          </button>
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <button
               onClick={() => setShowClaimsModal(true)}
-              className="flex items-center gap-2 px-4 py-2 border border-[#850303]/40 text-[#850303] rounded-lg font-semibold hover:bg-[#850303]/10 transition-all duration-200"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 border border-[#850303]/40 text-[#850303] rounded-lg font-semibold hover:bg-[#850303]/10 transition-all duration-200 text-sm sm:text-base"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Pending Claims
+              <span className="hidden sm:inline">Pending Claims</span>
+              <span className="sm:hidden">Claims</span>
             </button>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-[#850303] text-white rounded-lg font-semibold hover:bg-[#700202] transition-all duration-200 shadow-md hover:shadow-lg"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-[#850303] text-white rounded-lg font-semibold hover:bg-[#700202] transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              Logout
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
