@@ -119,27 +119,29 @@ export default function FoundItems() {
       })
       if (response.ok) {
         const data = await response.json()
+        console.log("Raw API response:", data)
+        console.log("First item raw data:", data.items?.[0])
+        
         const normalizedItems = (data.items || []).map((item) => {
+          // Log raw item data
+          console.log(`Raw item ${item._id}:`, item)
+          console.log(`Raw images for ${item._id}:`, item.images, "Type:", typeof item.images, "Is Array:", Array.isArray(item.images))
+          
           // Ensure images array is preserved and properly formatted
           let images = []
-          if (Array.isArray(item.images) && item.images.length > 0) {
-            images = item.images
-              .filter(img => img && img.trim() !== '') // Filter out empty/null images
-              .map(img => {
-                // If image is already a full URL, use it as-is
-                if (img.startsWith("http://") || img.startsWith("https://")) {
-                  return img
-                }
-                // If image starts with /, ensure it's properly formatted
-                if (img.startsWith("/")) {
-                  return img
-                }
-                // Otherwise, assume it's a relative path and prepend /
-                return img.startsWith("/") ? img : `/${img}`
-              })
+          if (item.images) {
+            // Handle different image formats
+            if (Array.isArray(item.images)) {
+              images = item.images
+                .filter(img => img && img !== null && img !== undefined && String(img).trim() !== '')
+                .map(img => String(img).trim())
+            } else if (typeof item.images === 'string') {
+              // Single image as string
+              images = [item.images.trim()]
+            }
           }
           
-          console.log(`Item ${item._id} images:`, images)
+          console.log(`Processed images for item ${item._id}:`, images)
           
           return {
             ...item,
@@ -148,7 +150,7 @@ export default function FoundItems() {
             images: images, // Preserve images array
           }
         })
-        console.log("Normalized items:", normalizedItems)
+        console.log("Normalized items with images:", normalizedItems.map(i => ({ id: i._id, title: i.title, images: i.images })))
         setItems(normalizedItems)
       } else {
         const errorData = await response.json()
@@ -841,41 +843,90 @@ export default function FoundItems() {
                   }`}
                 >
                   {/* Item Images */}
-                  {item.images && item.images.length > 0 && item.images[0] ? (
-                    <div className={`${viewMode === "list" ? "w-full sm:w-64 h-48" : "h-48"} relative overflow-hidden`}>
-                      <img
-                        key={`${item._id}-img-${item.images[0]}`}
-                        src={(() => {
-                          const imgPath = item.images[0]
-                          // If already a full URL, use as-is
-                          if (imgPath.startsWith("http://") || imgPath.startsWith("https://")) {
-                            return imgPath
-                          }
-                          // If starts with /, prepend BASE_URL
-                          if (imgPath.startsWith("/")) {
-                            return `${BASE_URL}${imgPath}`
-                          }
-                          // Otherwise, assume it needs /uploads/found-items/ prefix
-                          return `${BASE_URL}/uploads/found-items/${imgPath}`
-                        })()}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        loading="lazy"
-                        onError={(e) => {
-                          // Only replace with placeholder if image truly fails to load
-                          if (e.currentTarget.src.includes('placeholder') || e.currentTarget.src.includes('data:')) {
-                            return
-                          }
-                          const originalSrc = e.currentTarget.src
-                          console.error(`Failed to load image for item ${item._id}:`, originalSrc, 'Original path:', item.images[0])
-                          // Prevent infinite loop
-                          e.currentTarget.onerror = null
-                          e.currentTarget.src = "https://via.placeholder.com/800x600?text=No+Image"
-                        }}
-                        onLoad={() => {
-                          console.log(`Successfully loaded image for item ${item._id}:`, item.images[0])
-                        }}
-                      />
+                  {(() => {
+                    const hasImages = item.images && Array.isArray(item.images) && item.images.length > 0 && item.images[0]
+                    console.log(`Rendering item ${item._id}: hasImages=${hasImages}, images=`, item.images)
+                    
+                    if (!hasImages) {
+                      return (
+                        <div className={`${viewMode === "list" ? "w-full sm:w-64 h-48" : "h-48"} relative overflow-hidden bg-gray-100 flex items-center justify-center`}>
+                          <span className="text-gray-500">No image available</span>
+                        </div>
+                      )
+                    }
+                    
+                    const imgPath = String(item.images[0]).trim()
+                    let imageSrc = imgPath
+                    
+                    // Try multiple path formats
+                    if (imgPath.startsWith("http://") || imgPath.startsWith("https://")) {
+                      imageSrc = imgPath
+                    } else if (imgPath.startsWith("/uploads/")) {
+                      imageSrc = `${BASE_URL}${imgPath}`
+                    } else if (imgPath.startsWith("/")) {
+                      imageSrc = `${BASE_URL}${imgPath}`
+                    } else if (imgPath.includes("uploads")) {
+                      imageSrc = `${BASE_URL}/${imgPath}`
+                    } else {
+                      // Try common upload paths
+                      imageSrc = `${BASE_URL}/uploads/found-items/${imgPath}`
+                    }
+                    
+                    console.log(`Image src for item ${item._id}:`, imageSrc, "from path:", imgPath)
+                    
+                    return (
+                      <div className={`${viewMode === "list" ? "w-full sm:w-64 h-48" : "h-48"} relative overflow-hidden`}>
+                        <img
+                          key={`${item._id}-img-${imgPath}-${Date.now()}`}
+                          src={imageSrc}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          loading="lazy"
+                          crossOrigin="anonymous"
+                          onError={(e) => {
+                            if (e.currentTarget.src.includes('placeholder') || e.currentTarget.src.includes('data:')) {
+                              return
+                            }
+                            console.error(`Failed to load image for item ${item._id}:`, {
+                              attemptedSrc: e.currentTarget.src,
+                              originalPath: imgPath,
+                              itemId: item._id,
+                              itemTitle: item.title
+                            })
+                            
+                            // Try alternative paths
+                            const altPaths = [
+                              `${BASE_URL}${imgPath}`,
+                              `${BASE_URL}/uploads/${imgPath}`,
+                              `${BASE_URL}/uploads/found-items/${imgPath.split('/').pop()}`,
+                              imgPath
+                            ]
+                            
+                            const currentAttempt = altPaths.find(p => e.currentTarget.src.includes(p.split('/').pop() || ''))
+                            const nextIndex = currentAttempt ? altPaths.indexOf(currentAttempt) + 1 : 0
+                            
+                            if (nextIndex < altPaths.length) {
+                              console.log(`Trying alternative path ${nextIndex + 1}:`, altPaths[nextIndex])
+                              e.currentTarget.src = altPaths[nextIndex]
+                              return
+                            }
+                            
+                            e.currentTarget.onerror = null
+                            e.currentTarget.src = "https://via.placeholder.com/800x600?text=No+Image"
+                          }}
+                          onLoad={() => {
+                            console.log(`✅ Successfully loaded image for item ${item._id}:`, imageSrc)
+                          }}
+                        />
+                        {item.images.length > 1 && (
+                          <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            +{item.images.length - 1} more
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      </div>
+                    )
+                  })()}
                       {item.images.length > 1 && (
                         <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-medium">
                           +{item.images.length - 1} more
