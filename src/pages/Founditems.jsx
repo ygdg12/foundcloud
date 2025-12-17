@@ -16,6 +16,15 @@ const BASE_URL =
 const CLAIMS_URL = (import.meta.env?.VITE_CLAIMS_API_URL || process.env.REACT_APP_CLAIMS_API_URL) || `${BASE_URL}/api/claims`
 const LOGO_SRC = "/foundcloud-logo.svg?v=2"
 
+// Always prefer the backend origin derived from API_URL (prevents accidentally using the frontend domain for images)
+const BACKEND_ORIGIN = (() => {
+  try {
+    return new URL(API_URL).origin
+  } catch {
+    return BASE_URL
+  }
+})()
+
 export default function FoundItems() {
   const navigate = useNavigate()
   const [items, setItems] = useState([])
@@ -114,7 +123,7 @@ export default function FoundItems() {
   const fetchItems = async () => {
     try {
       const token = localStorage.getItem("authToken")
-      const response = await fetch(`${BASE_URL}/api/found-items`, {
+      const response = await fetch(API_URL, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (response.ok) {
@@ -859,11 +868,11 @@ export default function FoundItems() {
                     if (imgPath.startsWith("http://") || imgPath.startsWith("https://")) {
                       imageSrc = imgPath
                     } else if (imgPath.startsWith("/uploads/") || imgPath.startsWith("/")) {
-                      imageSrc = `${BASE_URL}${imgPath}`
+                      imageSrc = `${BACKEND_ORIGIN}${imgPath}`
                     } else if (imgPath.includes("uploads")) {
-                      imageSrc = `${BASE_URL}/${imgPath}`
+                      imageSrc = `${BACKEND_ORIGIN}/${imgPath}`
                     } else {
-                      imageSrc = `${BASE_URL}/uploads/found-items/${imgPath}`
+                      imageSrc = `${BACKEND_ORIGIN}/uploads/found-items/${imgPath}`
                     }
 
                     return (
@@ -877,9 +886,9 @@ export default function FoundItems() {
                           onError={(e) => {
                             if (e.currentTarget.src.includes("placeholder") || e.currentTarget.src.includes("data:")) return
                             const altPaths = [
-                              `${BASE_URL}${imgPath}`,
-                              `${BASE_URL}/uploads/${imgPath}`,
-                              `${BASE_URL}/uploads/found-items/${imgPath.split("/").pop()}`,
+                              `${BACKEND_ORIGIN}${imgPath}`,
+                              `${BACKEND_ORIGIN}/uploads/${imgPath}`,
+                              `${BACKEND_ORIGIN}/uploads/found-items/${imgPath.split("/").pop()}`,
                               imgPath,
                             ]
                             const current = e.currentTarget.src
