@@ -120,12 +120,16 @@ export default function FoundItems() {
       if (response.ok) {
         const data = await response.json()
         const normalizedItems = (data.items || []).map((item) => {
+          // Ensure images array is preserved and not lost
+          const images = Array.isArray(item.images) && item.images.length > 0 
+            ? item.images.filter(img => img && img.trim() !== '') // Filter out empty/null images
+            : []
+          
           return {
             ...item,
             contactEmail: item.contactEmail ?? "",
             contactPhone: item.contactPhone ?? "",
-            // Keep images as-is from backend (same as Admin portal)
-            images: item.images || [],
+            images: images, // Preserve images array
           }
         })
         console.log("Normalized items:", normalizedItems)
@@ -824,15 +828,26 @@ export default function FoundItems() {
                   {item.images && item.images.length > 0 && item.images[0] ? (
                     <div className={`${viewMode === "list" ? "w-full sm:w-64 h-48" : "h-48"} relative overflow-hidden`}>
                       <img
+                        key={`${item._id}-${item.images[0]}`}
                         src={item.images[0].startsWith("http") ? item.images[0] : `${BASE_URL}${item.images[0]}`}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        loading="lazy"
                         onError={(e) => {
+                          // Only replace with placeholder if image truly fails to load
+                          // Don't replace if it's already the placeholder
+                          if (e.currentTarget.src.includes('placeholder')) {
+                            return
+                          }
                           const imageUrl = item.images[0]?.startsWith("http") ? item.images[0] : `${BASE_URL}${item.images[0] || ""}`
                           console.error(`Failed to load image: ${imageUrl}`)
-                          // Use a reliable external placeholder to avoid 404s in dev
+                          // Prevent infinite loop
                           e.currentTarget.onerror = null
                           e.currentTarget.src = "https://via.placeholder.com/800x600?text=No+Image"
+                        }}
+                        onLoad={() => {
+                          // Image loaded successfully
+                          console.log(`Successfully loaded image for item ${item._id}: ${item.images[0]}`)
                         }}
                       />
                       {item.images.length > 1 && (
@@ -1014,17 +1029,18 @@ export default function FoundItems() {
                   const itemId = it._id || it.id
                   const updatedId = data.item._id || data.item.id
                   if (itemId && updatedId && itemId.toString() === updatedId.toString()) {
-                    // Merge the updated item, preserving foundBy if it exists
+                    // Merge the updated item, preserving foundBy and images if they exist
                     return {
                       ...data.item,
-                      foundBy: data.item.foundBy || it.foundBy
+                      foundBy: data.item.foundBy || it.foundBy,
+                      images: data.item.images && data.item.images.length > 0 ? data.item.images : (it.images || [])
                     }
                   }
                   return it
                 }))
                 setUpdateItem(null)
                 // Refresh items to ensure all data is up to date
-                fetchItems()
+                await fetchItems()
               } catch (err) {
                 const errorMessage = err.response?.data?.message || err.message || "Failed to update item";
                 showNotification(errorMessage, "error");
