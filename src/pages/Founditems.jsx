@@ -43,6 +43,35 @@ const getBackendOrigin = () => {
   return DEFAULT_BACKEND_ORIGIN
 }
 
+// Normalize weird/partial URLs coming from backend (or older records)
+const normalizeImageRef = (raw) => {
+  if (raw == null) return ""
+  const s = String(raw).trim()
+  if (!s) return ""
+  // Fix missing colon in protocol (e.g. "https//domain/...")
+  if (/^https\/\//i.test(s)) return s.replace(/^https\/\//i, "https://")
+  if (/^http\/\//i.test(s)) return s.replace(/^http\/\//i, "http://")
+  return s
+}
+
+const buildImageUrl = (imgRef) => {
+  const BACKEND_ORIGIN = getBackendOrigin()
+  const imgPath = normalizeImageRef(imgRef)
+  if (!imgPath) return ""
+
+  // Already absolute URL
+  if (/^https?:\/\//i.test(imgPath)) return imgPath
+
+  // Absolute path from backend (e.g. "/uploads/found-items/...")
+  if (imgPath.startsWith("/")) return `${BACKEND_ORIGIN}${imgPath}`
+
+  // "uploads/..." without leading slash
+  if (imgPath.startsWith("uploads/")) return `${BACKEND_ORIGIN}/${imgPath}`
+
+  // Filename only
+  return `${BACKEND_ORIGIN}/uploads/found-items/${imgPath}`
+}
+
 export default function FoundItems() {
   const navigate = useNavigate()
   const [items, setItems] = useState([])
@@ -880,19 +909,8 @@ export default function FoundItems() {
                       )
                     }
 
-                    const imgPath = String(item.images[0]).trim()
-                    let imageSrc = imgPath
-
-                    const BACKEND_ORIGIN = getBackendOrigin()
-                    if (imgPath.startsWith("http://") || imgPath.startsWith("https://")) {
-                      imageSrc = imgPath
-                    } else if (imgPath.startsWith("/uploads/") || imgPath.startsWith("/")) {
-                      imageSrc = `${BACKEND_ORIGIN}${imgPath}`
-                    } else if (imgPath.includes("uploads")) {
-                      imageSrc = `${BACKEND_ORIGIN}/${imgPath}`
-                    } else {
-                      imageSrc = `${BACKEND_ORIGIN}/uploads/found-items/${imgPath}`
-                    }
+                    const imgPath = normalizeImageRef(item.images[0])
+                    const imageSrc = buildImageUrl(imgPath)
 
                     return (
                       <div className={`${viewMode === "list" ? "w-full sm:w-64 h-48" : "h-48"} relative overflow-hidden`}>
@@ -903,18 +921,18 @@ export default function FoundItems() {
                           loading="lazy"
                           onError={(e) => {
                             if (e.currentTarget.src.includes("placeholder") || e.currentTarget.src.includes("data:")) return
+                            const BACKEND_ORIGIN = getBackendOrigin()
+                            const file = imgPath.split("/").pop()
                             const altPaths = [
-                              `${BACKEND_ORIGIN}${imgPath}`,
-                              `${BACKEND_ORIGIN}/uploads/${imgPath}`,
-                              `${BACKEND_ORIGIN}/uploads/found-items/${imgPath.split("/").pop()}`,
-                              imgPath,
-                            ]
+                              buildImageUrl(imgPath),
+                              file ? `${BACKEND_ORIGIN}/uploads/found-items/${file}` : "",
+                              file ? `${BACKEND_ORIGIN}/uploads/${file}` : "",
+                            ].filter(Boolean)
+
+                            // Try next alternative that isn't the current URL
                             const current = e.currentTarget.src
                             const next = altPaths.find((p) => p !== current)
-                            if (next) {
-                              e.currentTarget.src = next
-                              return
-                            }
+                            if (next) e.currentTarget.src = next
                             e.currentTarget.onerror = null
                             e.currentTarget.src = "https://via.placeholder.com/800x600?text=No+Image"
                           }}
