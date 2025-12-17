@@ -120,10 +120,26 @@ export default function FoundItems() {
       if (response.ok) {
         const data = await response.json()
         const normalizedItems = (data.items || []).map((item) => {
-          // Ensure images array is preserved and not lost
-          const images = Array.isArray(item.images) && item.images.length > 0 
-            ? item.images.filter(img => img && img.trim() !== '') // Filter out empty/null images
-            : []
+          // Ensure images array is preserved and properly formatted
+          let images = []
+          if (Array.isArray(item.images) && item.images.length > 0) {
+            images = item.images
+              .filter(img => img && img.trim() !== '') // Filter out empty/null images
+              .map(img => {
+                // If image is already a full URL, use it as-is
+                if (img.startsWith("http://") || img.startsWith("https://")) {
+                  return img
+                }
+                // If image starts with /, ensure it's properly formatted
+                if (img.startsWith("/")) {
+                  return img
+                }
+                // Otherwise, assume it's a relative path and prepend /
+                return img.startsWith("/") ? img : `/${img}`
+              })
+          }
+          
+          console.log(`Item ${item._id} images:`, images)
           
           return {
             ...item,
@@ -828,26 +844,36 @@ export default function FoundItems() {
                   {item.images && item.images.length > 0 && item.images[0] ? (
                     <div className={`${viewMode === "list" ? "w-full sm:w-64 h-48" : "h-48"} relative overflow-hidden`}>
                       <img
-                        key={`${item._id}-${item.images[0]}`}
-                        src={item.images[0].startsWith("http") ? item.images[0] : `${BASE_URL}${item.images[0]}`}
+                        key={`${item._id}-img-${item.images[0]}`}
+                        src={(() => {
+                          const imgPath = item.images[0]
+                          // If already a full URL, use as-is
+                          if (imgPath.startsWith("http://") || imgPath.startsWith("https://")) {
+                            return imgPath
+                          }
+                          // If starts with /, prepend BASE_URL
+                          if (imgPath.startsWith("/")) {
+                            return `${BASE_URL}${imgPath}`
+                          }
+                          // Otherwise, assume it needs /uploads/found-items/ prefix
+                          return `${BASE_URL}/uploads/found-items/${imgPath}`
+                        })()}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         loading="lazy"
                         onError={(e) => {
                           // Only replace with placeholder if image truly fails to load
-                          // Don't replace if it's already the placeholder
-                          if (e.currentTarget.src.includes('placeholder')) {
+                          if (e.currentTarget.src.includes('placeholder') || e.currentTarget.src.includes('data:')) {
                             return
                           }
-                          const imageUrl = item.images[0]?.startsWith("http") ? item.images[0] : `${BASE_URL}${item.images[0] || ""}`
-                          console.error(`Failed to load image: ${imageUrl}`)
+                          const originalSrc = e.currentTarget.src
+                          console.error(`Failed to load image for item ${item._id}:`, originalSrc, 'Original path:', item.images[0])
                           // Prevent infinite loop
                           e.currentTarget.onerror = null
                           e.currentTarget.src = "https://via.placeholder.com/800x600?text=No+Image"
                         }}
                         onLoad={() => {
-                          // Image loaded successfully
-                          console.log(`Successfully loaded image for item ${item._id}: ${item.images[0]}`)
+                          console.log(`Successfully loaded image for item ${item._id}:`, item.images[0])
                         }}
                       />
                       {item.images.length > 1 && (
