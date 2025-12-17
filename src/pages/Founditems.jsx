@@ -16,14 +16,32 @@ const BASE_URL =
 const CLAIMS_URL = (import.meta.env?.VITE_CLAIMS_API_URL || process.env.REACT_APP_CLAIMS_API_URL) || `${BASE_URL}/api/claims`
 const LOGO_SRC = "/foundcloud-logo.svg?v=2"
 
-// Always prefer the backend origin derived from API_URL (prevents accidentally using the frontend domain for images)
-const BACKEND_ORIGIN = (() => {
-  try {
-    return new URL(API_URL).origin
-  } catch {
-    return BASE_URL
+// Resolve the backend origin robustly (Vercel envs sometimes set BASE_URL to the frontend domain,
+// and API_URL may be relative like "/api/found-items")
+const DEFAULT_BACKEND_ORIGIN = "https://lost-items-backend-q30o.onrender.com"
+const getBackendOrigin = () => {
+  // 1) If API_URL is absolute, use it
+  if (typeof API_URL === "string" && /^https?:\/\//i.test(API_URL)) {
+    try {
+      return new URL(API_URL).origin
+    } catch {
+      // fall through
+    }
   }
-})()
+
+  // 2) Use BASE_URL if it looks like a backend (not the current frontend origin)
+  if (typeof BASE_URL === "string" && /^https?:\/\//i.test(BASE_URL)) {
+    try {
+      const frontendOrigin = typeof window !== "undefined" ? window.location.origin : null
+      if (!frontendOrigin || BASE_URL !== frontendOrigin) return BASE_URL
+    } catch {
+      return BASE_URL
+    }
+  }
+
+  // 3) Fallback to known backend
+  return DEFAULT_BACKEND_ORIGIN
+}
 
 export default function FoundItems() {
   const navigate = useNavigate()
@@ -865,6 +883,7 @@ export default function FoundItems() {
                     const imgPath = String(item.images[0]).trim()
                     let imageSrc = imgPath
 
+                    const BACKEND_ORIGIN = getBackendOrigin()
                     if (imgPath.startsWith("http://") || imgPath.startsWith("https://")) {
                       imageSrc = imgPath
                     } else if (imgPath.startsWith("/uploads/") || imgPath.startsWith("/")) {
@@ -882,7 +901,6 @@ export default function FoundItems() {
                           alt={item.title}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           loading="lazy"
-                          crossOrigin="anonymous"
                           onError={(e) => {
                             if (e.currentTarget.src.includes("placeholder") || e.currentTarget.src.includes("data:")) return
                             const altPaths = [
