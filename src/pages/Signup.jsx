@@ -22,7 +22,7 @@ const BASE_URL =
   import.meta.env?.VITE_BASE_URL ||
   process.env.REACT_APP_BASE_URL ||
   "https://lost-items-backend-q30o.onrender.com"
-const LOGO_SRC = "/foundcloud-logo.svg?v=2"
+const LOGO_SRC = "/foundcloud_logo.svg"
 
 // Constants for validation
 const VALIDATION_RULES = {

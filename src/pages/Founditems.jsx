@@ -14,11 +14,19 @@ const BASE_URL =
   process.env.REACT_APP_BASE_URL ||
   "https://lost-items-backend-q30o.onrender.com"
 const CLAIMS_URL = (import.meta.env?.VITE_CLAIMS_API_URL || process.env.REACT_APP_CLAIMS_API_URL) || `${BASE_URL}/api/claims`
-const LOGO_SRC = "/foundcloud-logo.svg?v=2"
+const LOGO_SRC = "/foundcloud_logo.svg"
 
 // Resolve the backend origin robustly (Vercel envs sometimes set BASE_URL to the frontend domain,
 // and API_URL may be relative like "/api/found-items")
 const DEFAULT_BACKEND_ORIGIN = "https://lost-items-backend-q30o.onrender.com"
+const PLACEHOLDER_IMG =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'>
+      <rect fill='%23eee' width='800' height='600'/>
+      <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-size='32'>No Image</text>
+    </svg>`
+  )
 const getBackendOrigin = () => {
   // 1) If API_URL is absolute, use it
   if (typeof API_URL === "string" && /^https?:\/\//i.test(API_URL)) {

@@ -14,7 +14,7 @@ const BASE_URL =
   process.env.REACT_APP_BASE_URL ||
   "https://lost-items-backend-q30o.onrender.com"
 const CLAIMS_URL = (import.meta?.env?.VITE_CLAIMS_API_URL || process.env.REACT_APP_CLAIMS_API_URL) || `${BASE_URL}/api/claims`
-const LOGO_SRC = "/foundcloud-logo.svg?v=2"
+const LOGO_SRC = "/foundcloud_logo.svg"
 
 // Resolve the backend origin robustly (Vercel envs sometimes set BASE_URL to the frontend domain,
 // and API_URL may be relative like "/api/lost-items")
