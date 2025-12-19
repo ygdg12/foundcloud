@@ -231,7 +231,7 @@ export default function HomePage() {
               className="flex items-center space-x-3 cursor-pointer group"
               onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}
             >
-              <div className="h-14 w-14 rounded-full bg-white/70 shadow-lg overflow-hidden border border-white/60 transition-all duration-300 group-hover:scale-110 group-hover:rotate-1">
+              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-white shadow-lg overflow-hidden border border-white/60 transition-all duration-300 group-hover:scale-110 group-hover:rotate-1">
                 <img
                   src={LOGO_SRC}
                   alt="FoundCloud logo"

@@ -140,7 +140,7 @@ export default function SecurityOfficer() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/70 shadow-lg overflow-hidden border border-white/60 flex-shrink-0">
+                <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-white shadow-lg overflow-hidden border border-white/60 flex-shrink-0">
                   <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
                 </div>
                 <span className="text-base sm:text-xl font-bold tracking-tight truncate">FoundCloud</span>

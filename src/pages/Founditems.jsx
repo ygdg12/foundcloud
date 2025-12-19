@@ -405,7 +405,7 @@ export default function FoundItems() {
               <span className="hidden sm:inline">Back</span>
             </button>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white shadow-md overflow-hidden border border-[#850303]/40">
+              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-white shadow-md overflow-hidden border border-[#850303]/40">
                 <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
               </div>
               <span className="hidden sm:inline text-lg font-bold text-[#850303]">FoundCloud</span>
@@ -940,9 +940,12 @@ export default function FoundItems() {
                             // Try next alternative that isn't the current URL
                             const current = e.currentTarget.src
                             const next = altPaths.find((p) => p !== current)
-                            if (next) e.currentTarget.src = next
-                            e.currentTarget.onerror = null
-                            e.currentTarget.src = "https://via.placeholder.com/800x600?text=No+Image"
+                            if (next) {
+                              e.currentTarget.src = next
+                            } else {
+                              e.currentTarget.onerror = null
+                              e.currentTarget.src = PLACEHOLDER_IMG
+                            }
                           }}
                         />
                         {item.images.length > 1 && (

@@ -19,6 +19,14 @@ const LOGO_SRC = "/foundcloud_logo.svg"
 // Resolve the backend origin robustly (Vercel envs sometimes set BASE_URL to the frontend domain,
 // and API_URL may be relative like "/api/lost-items")
 const DEFAULT_BACKEND_ORIGIN = "https://lost-items-backend-q30o.onrender.com"
+const PLACEHOLDER_IMG =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'>
+      <rect fill='%23eee' width='800' height='600'/>
+      <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-size='32'>No Image</text>
+    </svg>`
+  )
 const getBackendOrigin = () => {
   // 1) If API_URL is absolute, use it
   if (typeof API_URL === "string" && /^https?:\/\//i.test(API_URL)) {
@@ -575,7 +583,7 @@ export default function LostItems() {
               <span className="hidden sm:inline">Back</span>
             </button>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white shadow-md overflow-hidden border border-[#850303]/40">
+              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-white shadow-md overflow-hidden border border-[#850303]/40">
                 <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
               </div>
               <span className="hidden sm:inline text-lg font-bold text-[#850303]">FoundCloud</span>
@@ -1080,9 +1088,12 @@ export default function LostItems() {
 
                           const current = e.currentTarget.src
                           const next = altPaths.find((p) => p !== current)
-                          if (next) e.currentTarget.src = next
-                          e.currentTarget.onerror = null
-                          e.currentTarget.src = "https://via.placeholder.com/800x600?text=No+Image"
+                          if (next) {
+                            e.currentTarget.src = next
+                          } else {
+                            e.currentTarget.onerror = null
+                            e.currentTarget.src = PLACEHOLDER_IMG
+                          }
                         }}
                       />
                       {item.images.length > 1 && (
