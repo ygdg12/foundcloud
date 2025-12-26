@@ -76,8 +76,20 @@ const buildImageUrl = (imgRef) => {
   // "uploads/..." without leading slash
   if (imgPath.startsWith("uploads/")) return `${BACKEND_ORIGIN}/${imgPath}`
 
-  // Filename only
-  return `${BACKEND_ORIGIN}/uploads/found-items/${imgPath}`
+  // "found-items/..." without "uploads" prefix
+  if (imgPath.startsWith("found-items/")) return `${BACKEND_ORIGIN}/uploads/${imgPath}`
+
+  // Generic fallback for other relative paths
+  if (!imgPath.includes("/")) return `${BACKEND_ORIGIN}/uploads/found-items/${imgPath}`
+  return `${BACKEND_ORIGIN}/${imgPath}`
+}
+
+const logImageError = (context) => {
+  try {
+    console.error("Image load failed:", context)
+  } catch {
+    // no-op
+  }
 }
 
 export default function FoundItems() {
@@ -935,6 +947,8 @@ export default function FoundItems() {
                               buildImageUrl(imgPath),
                               file ? `${BACKEND_ORIGIN}/uploads/found-items/${file}` : "",
                               file ? `${BACKEND_ORIGIN}/uploads/${file}` : "",
+                              file ? `${BACKEND_ORIGIN}/found-items/${file}` : "",
+                              `${BACKEND_ORIGIN}/${imgPath}`,
                             ].filter(Boolean)
 
                             // Try next alternative that isn't the current URL
@@ -943,6 +957,13 @@ export default function FoundItems() {
                             if (next) {
                               e.currentTarget.src = next
                             } else {
+                              logImageError({
+                                itemId: item._id,
+                                itemTitle: item.title,
+                                originalPath: imgPath,
+                                attempted: current,
+                                altPaths,
+                              })
                               e.currentTarget.onerror = null
                               e.currentTarget.src = PLACEHOLDER_IMG
                             }

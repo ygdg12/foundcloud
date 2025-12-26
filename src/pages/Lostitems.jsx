@@ -76,8 +76,12 @@ const buildImageUrl = (imgRef) => {
   // "uploads/..." without leading slash
   if (imgPath.startsWith("uploads/")) return `${BACKEND_ORIGIN}/${imgPath}`
 
-  // Filename only
-  return `${BACKEND_ORIGIN}/uploads/lost-items/${imgPath}`
+  // "lost-items/..." without "uploads" prefix
+  if (imgPath.startsWith("lost-items/")) return `${BACKEND_ORIGIN}/uploads/${imgPath}`
+
+  // Generic fallback for other relative paths
+  if (!imgPath.includes("/")) return `${BACKEND_ORIGIN}/uploads/lost-items/${imgPath}`
+  return `${BACKEND_ORIGIN}/${imgPath}`
 }
 
 export default function LostItems() {
@@ -1084,6 +1088,8 @@ export default function LostItems() {
                             buildImageUrl(imgPath),
                             file ? `${BACKEND_ORIGIN}/uploads/lost-items/${file}` : "",
                             file ? `${BACKEND_ORIGIN}/uploads/${file}` : "",
+                            file ? `${BACKEND_ORIGIN}/lost-items/${file}` : "",
+                            `${BACKEND_ORIGIN}/${imgPath}`,
                           ].filter(Boolean)
 
                           const current = e.currentTarget.src
