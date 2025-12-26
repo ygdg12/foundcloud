@@ -935,37 +935,51 @@ export default function FoundItems() {
                     return (
                       <div className={`${viewMode === "list" ? "w-full sm:w-64 h-48" : "h-48"} relative overflow-hidden`}>
                         <img
+                          key={`${item._id}-${imgPath}`}
                           src={imageSrc}
                           alt={item.title}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           loading="lazy"
+                          crossOrigin="anonymous"
+                          referrerPolicy="no-referrer"
                           onError={(e) => {
-                            if (e.currentTarget.src.includes("placeholder") || e.currentTarget.src.includes("data:")) return
+                            const img = e.currentTarget
+                            // Prevent infinite loops
+                            if (img.src.includes("data:image") || img.dataset.failed === "true") {
+                              img.onerror = null
+                              return
+                            }
+                            
+                            // Mark as failed after first attempt
+                            if (!img.dataset.retryCount) {
+                              img.dataset.retryCount = "0"
+                            }
+                            const retryCount = parseInt(img.dataset.retryCount, 10)
+                            
+                            if (retryCount >= 2) {
+                              img.dataset.failed = "true"
+                              img.onerror = null
+                              img.src = PLACEHOLDER_IMG
+                              return
+                            }
+                            
+                            img.dataset.retryCount = String(retryCount + 1)
                             const BACKEND_ORIGIN = getBackendOrigin()
                             const file = imgPath.split("/").pop()
                             const altPaths = [
-                              buildImageUrl(imgPath),
                               file ? `${BACKEND_ORIGIN}/uploads/found-items/${file}` : "",
                               file ? `${BACKEND_ORIGIN}/uploads/${file}` : "",
-                              file ? `${BACKEND_ORIGIN}/found-items/${file}` : "",
-                              `${BACKEND_ORIGIN}/${imgPath}`,
+                              imgPath.startsWith("/") ? `${BACKEND_ORIGIN}${imgPath}` : `${BACKEND_ORIGIN}/uploads/found-items/${imgPath}`,
                             ].filter(Boolean)
 
-                            // Try next alternative that isn't the current URL
-                            const current = e.currentTarget.src
-                            const next = altPaths.find((p) => p !== current)
+                            const current = img.src
+                            const next = altPaths.find((p) => p && p !== current)
                             if (next) {
-                              e.currentTarget.src = next
+                              img.src = next
                             } else {
-                              logImageError({
-                                itemId: item._id,
-                                itemTitle: item.title,
-                                originalPath: imgPath,
-                                attempted: current,
-                                altPaths,
-                              })
-                              e.currentTarget.onerror = null
-                              e.currentTarget.src = PLACEHOLDER_IMG
+                              img.dataset.failed = "true"
+                              img.onerror = null
+                              img.src = PLACEHOLDER_IMG
                             }
                           }}
                         />
