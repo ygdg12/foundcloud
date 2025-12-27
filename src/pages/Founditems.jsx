@@ -79,8 +79,23 @@ const buildImageUrl = (imgRef) => {
   // "found-items/..." without "uploads" prefix
   if (imgPath.startsWith("found-items/")) return `${BACKEND_ORIGIN}/uploads/${imgPath}`
 
-  // Generic fallback for other relative paths
-  if (!imgPath.includes("/")) return `${BACKEND_ORIGIN}/uploads/found-items/${imgPath}`
+  // For just filenames, try multiple common backend paths
+  if (!imgPath.includes("/")) {
+    // Try common backend image serving paths
+    const possiblePaths = [
+      `${BACKEND_ORIGIN}/uploads/found-items/${imgPath}`,
+      `${BACKEND_ORIGIN}/api/uploads/found-items/${imgPath}`,
+      `${BACKEND_ORIGIN}/api/images/found-items/${imgPath}`,
+      `${BACKEND_ORIGIN}/images/found-items/${imgPath}`,
+      `${BACKEND_ORIGIN}/uploads/${imgPath}`,
+      `${BACKEND_ORIGIN}/api/uploads/${imgPath}`,
+      `${BACKEND_ORIGIN}/static/uploads/found-items/${imgPath}`,
+      `${BACKEND_ORIGIN}/public/uploads/found-items/${imgPath}`,
+    ]
+    // Return the first path (most common), error handler will try others
+    return possiblePaths[0]
+  }
+  
   return `${BACKEND_ORIGIN}/${imgPath}`
 }
 
@@ -931,6 +946,7 @@ export default function FoundItems() {
 
                     const imgPath = normalizeImageRef(item.images[0])
                     const imageSrc = buildImageUrl(imgPath)
+                    console.log(`Building image URL for item ${item._id}:`, { imgPath, imageSrc })
 
                     return (
                       <div className={`${viewMode === "list" ? "w-full sm:w-64 h-48" : "h-48"} relative overflow-hidden bg-gray-100`}>
@@ -968,17 +984,26 @@ export default function FoundItems() {
                             const BACKEND_ORIGIN = getBackendOrigin()
                             const file = imgPath.split("/").pop()
                             
-                            // Try more path variations
+                            // Try comprehensive path variations based on common backend structures
                             const altPaths = [
-                              // Try with just filename in found-items
+                              // API-based paths
+                              file ? `${BACKEND_ORIGIN}/api/uploads/found-items/${file}` : "",
+                              file ? `${BACKEND_ORIGIN}/api/images/found-items/${file}` : "",
+                              file ? `${BACKEND_ORIGIN}/api/uploads/${file}` : "",
+                              // Static/public paths
+                              file ? `${BACKEND_ORIGIN}/static/uploads/found-items/${file}` : "",
+                              file ? `${BACKEND_ORIGIN}/public/uploads/found-items/${file}` : "",
+                              // Direct uploads paths
                               file ? `${BACKEND_ORIGIN}/uploads/found-items/${file}` : "",
-                              // Try with just filename in uploads root
                               file ? `${BACKEND_ORIGIN}/uploads/${file}` : "",
-                              // Try original path if it starts with /
+                              // Images directory
+                              file ? `${BACKEND_ORIGIN}/images/found-items/${file}` : "",
+                              file ? `${BACKEND_ORIGIN}/images/${file}` : "",
+                              // Original path if it starts with /
                               imgPath.startsWith("/") ? `${BACKEND_ORIGIN}${imgPath}` : "",
                               // Try with found-items prefix
                               imgPath.startsWith("/") ? "" : `${BACKEND_ORIGIN}/uploads/found-items/${imgPath}`,
-                              // Try without any prefix (direct from backend root)
+                              // Direct from backend root
                               file ? `${BACKEND_ORIGIN}/${file}` : "",
                             ].filter(Boolean)
 
