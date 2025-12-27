@@ -933,12 +933,12 @@ export default function FoundItems() {
                     const imageSrc = buildImageUrl(imgPath)
 
                     return (
-                      <div className={`${viewMode === "list" ? "w-full sm:w-64 h-48" : "h-48"} relative overflow-hidden`}>
+                      <div className={`${viewMode === "list" ? "w-full sm:w-64 h-48" : "h-48"} relative overflow-hidden bg-gray-100`}>
                         <img
                           key={`${item._id}-${imgPath}`}
                           src={imageSrc}
                           alt={item.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 bg-white"
                           loading="lazy"
                           crossOrigin="anonymous"
                           referrerPolicy="no-referrer"
