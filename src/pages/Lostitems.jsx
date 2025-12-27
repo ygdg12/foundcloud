@@ -1079,7 +1079,7 @@ export default function LostItems() {
                         key={`${item._id}-${imgPath}`}
                         src={imageSrc}
                         alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 bg-white"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         loading="lazy"
                         crossOrigin="anonymous"
                         referrerPolicy="no-referrer"
@@ -1097,7 +1097,8 @@ export default function LostItems() {
                           }
                           const retryCount = parseInt(img.dataset.retryCount, 10)
                           
-                          if (retryCount >= 2) {
+                          // Show placeholder after 1 attempt (faster fallback)
+                          if (retryCount >= 1) {
                             img.dataset.failed = "true"
                             img.onerror = null
                             img.src = PLACEHOLDER_IMG
@@ -1107,10 +1108,19 @@ export default function LostItems() {
                           img.dataset.retryCount = String(retryCount + 1)
                           const BACKEND_ORIGIN = getBackendOrigin()
                           const file = imgPath.split("/").pop()
+                          
+                          // Try more path variations
                           const altPaths = [
+                            // Try with just filename in lost-items
                             file ? `${BACKEND_ORIGIN}/uploads/lost-items/${file}` : "",
+                            // Try with just filename in uploads root
                             file ? `${BACKEND_ORIGIN}/uploads/${file}` : "",
-                            imgPath.startsWith("/") ? `${BACKEND_ORIGIN}${imgPath}` : `${BACKEND_ORIGIN}/uploads/lost-items/${imgPath}`,
+                            // Try original path if it starts with /
+                            imgPath.startsWith("/") ? `${BACKEND_ORIGIN}${imgPath}` : "",
+                            // Try with lost-items prefix
+                            imgPath.startsWith("/") ? "" : `${BACKEND_ORIGIN}/uploads/lost-items/${imgPath}`,
+                            // Try without any prefix (direct from backend root)
+                            file ? `${BACKEND_ORIGIN}/${file}` : "",
                           ].filter(Boolean)
 
                           const current = img.src
@@ -1118,6 +1128,7 @@ export default function LostItems() {
                           if (next) {
                             img.src = next
                           } else {
+                            // No more paths to try, show placeholder
                             img.dataset.failed = "true"
                             img.onerror = null
                             img.src = PLACEHOLDER_IMG
