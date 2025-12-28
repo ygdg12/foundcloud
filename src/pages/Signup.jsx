@@ -22,7 +22,7 @@ const BASE_URL =
   import.meta.env?.VITE_BASE_URL ||
   process.env.REACT_APP_BASE_URL ||
   "https://lost-items-backend-q30o.onrender.com"
-const LOGO_SRC = "/foundcloud_logo.svg"
+const LOGO_SRC = "/foundcloud white.svg"
 
 // Constants for validation
 const VALIDATION_RULES = {
@@ -567,9 +567,12 @@ export default function Signup() {
                   type="button"
                   onClick={() => dispatch({ type: "TOGGLE_ADMIN_MODAL" })}
                   disabled={state.loading}
-                  className="px-3 py-1.5 text-xs bg-gray-700 hover:bg-gray-800 text-white rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2.5 text-sm font-semibold bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                 >
-                  Admin
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Admin Access
                 </button>
               </div>
             )}

@@ -14,7 +14,7 @@ const BASE_URL =
   process.env.REACT_APP_BASE_URL ||
   "https://lost-items-backend-q30o.onrender.com"
 const CLAIMS_URL = (import.meta?.env?.VITE_CLAIMS_API_URL || process.env.REACT_APP_CLAIMS_API_URL) || `${BASE_URL}/api/claims`
-const LOGO_SRC = "/foundcloud_logo.svg"
+const LOGO_SRC = "/foundcloud white.svg"
 
 // Resolve the backend origin robustly (Vercel envs sometimes set BASE_URL to the frontend domain,
 // and API_URL may be relative like "/api/lost-items")
@@ -1251,9 +1251,12 @@ export default function LostItems() {
                             additionalDetails: item.additionalDetails || "",
                           });
                         }}
-                        className="px-3 py-1.5 rounded-md bg-gray-500 text-white text-sm font-medium hover:opacity-90 transition"
+                        className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-gray-600 to-gray-700 text-white text-sm font-semibold hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 w-full"
                       >
-                        Update
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Update Item
                       </button>
                     </div>
                   )}

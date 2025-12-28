@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom";
 
-const LOGO_SRC = "/foundcloud_logo.svg"
+const LOGO_SRC = "/foundcloud white.svg"
 
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)

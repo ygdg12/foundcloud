@@ -14,7 +14,7 @@ const BASE_URL =
   process.env.REACT_APP_BASE_URL ||
   "https://lost-items-backend-q30o.onrender.com"
 const CLAIMS_URL = (import.meta.env?.VITE_CLAIMS_API_URL || process.env.REACT_APP_CLAIMS_API_URL) || `${BASE_URL}/api/claims`
-const LOGO_SRC = "/foundcloud_logo.svg"
+const LOGO_SRC = "/foundcloud white.svg"
 
 // Resolve the backend origin robustly (Vercel envs sometimes set BASE_URL to the frontend domain,
 // and API_URL may be relative like "/api/found-items")
@@ -1073,15 +1073,18 @@ export default function FoundItems() {
 
 
                     {/* Action buttons */}
-                    <div className="mt-4 flex space-x-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
                       <button
                         onClick={() => {
                           setClaimItem(item)
                           setClaimForm({ ownershipProof: "", verificationAnswers: "" })
                         }}
-                        className="px-3 py-1.5 rounded-md bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
+                        className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#850303] to-[#700202] text-white text-sm font-semibold hover:from-[#700202] hover:to-[#5a0101] transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 flex-1 sm:flex-initial"
                       >
-                        Claim
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Claim Item
                       </button>
                       {(() => {
                         // Only show update button if user is logged in
@@ -1127,9 +1130,12 @@ export default function FoundItems() {
                               contactPhone: item.contactPhone || '',
                             })
                           }}
-                          className="px-3 py-1.5 rounded-md bg-gray-500 text-white text-sm font-medium hover:opacity-90 transition"
+                          className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-gray-600 to-gray-700 text-white text-sm font-semibold hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 flex-1 sm:flex-initial"
                         >
-                          Update
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Update Item
                         </button>
                       )}
                     </div>

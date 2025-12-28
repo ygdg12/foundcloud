@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-const LOGO_SRC = "/foundcloud_logo.svg"
+const LOGO_SRC = "/foundcloud white.svg"
 
 const BASE_URL =
   import.meta.env?.VITE_BASE_URL ||
