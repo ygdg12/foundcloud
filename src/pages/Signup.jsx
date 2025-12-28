@@ -344,8 +344,8 @@ export default function Signup() {
           <div className="flex flex-col space-y-8 max-w-2xl">
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-white shadow-lg overflow-hidden border border-[#850303]/40">
-                  <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
+                <div className="h-16 w-16 sm:h-20 sm:w-20">
+                  <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-contain" loading="lazy" />
                 </div>
                 <h1 className="text-6xl font-black text-[#850303] tracking-tight text-balance">
                   FoundCloud

@@ -432,8 +432,8 @@ export default function FoundItems() {
               <span className="hidden sm:inline">Back</span>
             </button>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-white shadow-md overflow-hidden border border-[#850303]/40">
-                <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
+              <div className="h-12 w-12 sm:h-16 sm:w-16">
+                <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-contain" loading="lazy" />
               </div>
               <span className="hidden sm:inline text-lg font-bold text-[#850303]">FoundCloud</span>
             </div>

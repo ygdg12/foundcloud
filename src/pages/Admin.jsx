@@ -208,8 +208,8 @@ export default function Admin() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-6">
               <div className="flex items-center gap-3">
-                <div className="h-16 w-16 rounded-full bg-white shadow-lg overflow-hidden border border-white/60">
-                  <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-cover" loading="lazy" />
+                <div className="h-16 w-16">
+                  <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-contain" loading="lazy" />
                 </div>
                 <span className="text-xl font-bold tracking-tight">FoundCloud</span>
               </div>
