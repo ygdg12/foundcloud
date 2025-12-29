@@ -219,18 +219,19 @@ export default function HomePage() {
 
       {/* Header */}
       <header
-        className={`fixed inset-x-0 top-0 z-50 border-b border-red-900/60 bg-red-900/95 backdrop-blur ${
-          scrolled ? "shadow-md" : "shadow-sm"
+        className={`fixed w-full top-0 z-50 transition-all duration-500 ${
+          scrolled 
+            ? "bg-red-900 shadow-2xl backdrop-blur-md py-2" 
+            : "bg-gradient-to-r from-red-900 via-red-800 to-red-900 backdrop-blur-lg py-4"
         }`}
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <nav className="flex items-center justify-between h-16 sm:h-18">
-            {/* Brand */}
-            <div
-              className="flex items-center gap-3 cursor-pointer"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex items-center justify-between">
+            <div 
+              className="flex items-center space-x-3 cursor-pointer group"
+              onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}
             >
-              <div className="h-9 w-9 sm:h-10 sm:w-10">
+              <div className="h-16 w-16 sm:h-20 sm:w-20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-1">
                 <img
                   src={LOGO_SRC}
                   alt="FoundCloud logo"
@@ -238,75 +239,78 @@ export default function HomePage() {
                   loading="lazy"
                 />
               </div>
-              <span className="text-lg sm:text-xl font-semibold tracking-tight text-white">
-                FoundCloud
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl sm:text-2xl font-bold text-white tracking-tight group-hover:text-red-50 transition-colors duration-300">
+                  FoundCloud
+                </span>
+                <span className="text-[10px] sm:text-xs text-red-200 font-medium opacity-80 hidden sm:block">
+                  Reunite • Recover • Restore
+                </span>
+              </div>
             </div>
-
-            {/* Desktop nav */}
-            <div className="hidden md:flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
-                className="text-sm text-red-100 hover:text-white transition-colors"
-              >
-                Features
+            <div className="hidden md:flex items-center space-x-1">
+              <button type="button" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="px-3 py-2 text-red-100 hover:text-white transition-all duration-300 font-medium rounded-lg hover:bg-white/10 relative group">
+                <span className="relative z-10">Features</span>
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-red-300 to-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
               </button>
-              <button
-                type="button"
-                onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}
-                className="text-sm text-red-100 hover:text-white transition-colors"
-              >
-                About
+              <button type="button" onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })} className="px-3 py-2 text-red-100 hover:text-white transition-all duration-300 font-medium rounded-lg hover:bg-white/10 relative group">
+                <span className="relative z-10">About</span>
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-red-300 to-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
               </button>
-              <button
-                type="button"
-                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-                className="text-sm text-red-100 hover:text-white transition-colors"
-              >
-                Contact
+              <button type="button" onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })} className="px-3 py-2 text-red-100 hover:text-white transition-all duration-300 font-medium rounded-lg hover:bg-white/10 relative group">
+                <span className="relative z-10">Contact</span>
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-red-300 to-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
               </button>
-
-              <div className="h-6 w-px bg-red-800/70" />
-
-              <button
-                onClick={handleSearch}
-                className="inline-flex items-center gap-2 rounded-md bg-white text-red-900 px-3 py-2 text-sm font-semibold shadow-sm hover:bg-red-50 hover:shadow transition"
-                aria-label="Search Items"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <span>Search</span>
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="rounded-md border border-red-300/60 px-3 py-2 text-sm font-semibold text-red-50 hover:bg-red-800 transition"
-              >
-                Logout
-              </button>
+              <div className="ml-3 pl-3 border-l border-red-700">
+                <button 
+                  onClick={handleSearch}
+                  className="bg-gradient-to-r from-white via-red-50 to-white text-red-900 p-2.5 sm:px-5 sm:py-2.5 rounded-xl font-bold hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg flex items-center justify-center group overflow-hidden relative"
+                  aria-label="Search Items"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></span>
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-12 transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </div>
+              <div className="ml-3 pl-3 border-l border-red-700">
+                <button
+                  onClick={handleSignOut}
+                  className="px-4 py-2 bg-white text-red-900 rounded-lg font-semibold hover:bg-red-50 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
-
-            {/* Mobile actions */}
+            
+            {/* Mobile menu button */}
             <div className="md:hidden flex items-center gap-2">
               <button
                 onClick={handleSearch}
-                className="text-white bg-white/10 hover:bg-white/20 p-2 rounded-md transition"
+                className="text-white bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-all duration-200"
                 aria-label="Search Items"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"> Search Items
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </button>
               <button
                 onClick={handleSignOut}
-                className="text-white border border-white/20 px-3 py-1.5 text-xs rounded-md hover:bg-white/10 transition"
+                className="text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-all duration-200"
               >
                 Logout
               </button>
+              <button className="text-white hover:bg-white/10 p-2 rounded-lg transition-all duration-200 active:scale-95">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16m-7 6h7" />
+              </svg>
+            </button>
             </div>
           </nav>
         </div>
+        
+        {/* Animated bottom border */}
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-300 to-transparent opacity-50"></div>
       </header>
 
       {/* Hero Section */}
@@ -475,88 +479,81 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="mt-12 border-t border-red-100 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
-            {/* Brand */}
-            <div className="max-w-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="h-8 w-8">
-                  <img
-                    src={LOGO_SRC}
-                    alt="FoundCloud logo"
-                    className="h-full w-full object-contain"
-                    loading="lazy"
-                  />
+      <footer className="bg-red-950 text-white py-12 px-4">
+        <div className="container mx-auto">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="h-8 w-8 bg-white rounded-lg flex items-center justify-center">
+                  <span className="text-red-900 font-bold text-lg">FC</span>
                 </div>
-                <span className="text-base font-semibold text-gray-900">FoundCloud</span>
+                <span className="text-xl font-bold">FoundCloud</span>
               </div>
-              <p className="text-sm text-gray-500">
-                Connecting communities to safely report, find, and return lost items on and around campus.
-              </p>
+              <p className="text-red-200">Connecting communities to reunite people with their lost belongings.</p>
             </div>
-
-            {/* Simple link columns */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-sm text-gray-500">
-              <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900 text-xs uppercase tracking-wide">Product</h3>
-                <button
-                  type="button"
-                  onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
-                  className="block hover:text-gray-900"
-                >
-                  Features
-                </button>
-                <button
-                  type="button"
-                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                  className="block hover:text-gray-900"
-                >
-                  How it works
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900 text-xs uppercase tracking-wide">Company</h3>
-                <button
-                  type="button"
-                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                  className="block hover:text-gray-900"
-                >
-                  About
-                </button>
-                <button
-                  type="button"
-                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                  className="block hover:text-gray-900"
-                >
-                  Community
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900 text-xs uppercase tracking-wide">Support</h3>
-                <button
-                  type="button"
-                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                  className="block hover:text-gray-900"
-                >
-                  Help center
-                </button>
-                <button
-                  type="button"
-                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                  className="block hover:text-gray-900"
-                >
-                  Contact
-                </button>
-              </div>
+            <div>
+              <h3 className="font-semibold mb-4 text-white">Product</h3>
+              <ul className="space-y-2 text-red-200">
+                <li>
+                  <button type="button" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-white transition-colors duration-200">
+                    Features
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-white transition-colors duration-200">
+                    How It Works
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-white transition-colors duration-200">
+                    Success Stories
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4 text-white">Company</h3>
+              <ul className="space-y-2 text-red-200">
+                <li>
+                  <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-white transition-colors duration-200">
+                    About
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-white transition-colors duration-200">
+                    Community
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-white transition-colors duration-200">
+                    News
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4 text-white">Support</h3>
+              <ul className="space-y-2 text-red-200">
+                <li>
+                  <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-white transition-colors duration-200">
+                    Help Center
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-white transition-colors duration-200">
+                    Contact
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-white transition-colors duration-200">
+                    Privacy
+                  </button>
+                </li>
+              </ul>
             </div>
           </div>
-
-          <div className="mt-8 pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
+          <div className="border-t border-red-800 mt-8 pt-8 text-center text-red-200">
             <p>&copy; 2025 FoundCloud. All rights reserved.</p>
-            <p className="text-[11px]">Built for WSU · Secure • Fast · Reliable</p>
           </div>
         </div>
       </footer>
