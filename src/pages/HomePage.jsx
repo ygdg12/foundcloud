@@ -221,7 +221,7 @@ export default function HomePage() {
       <header
         className={`fixed w-full top-0 z-50 transition-all duration-500 ${
           scrolled
-            ? "bg-red-950/95 shadow-xl backdrop-blur-lg border-b border-red-800/70"
+            ? "bg-red-950/30 shadow-lg backdrop-blur-xl border-b border-red-800/60"
             : "bg-gradient-to-r from-red-950/90 via-red-900/90 to-red-950/90 shadow-md backdrop-blur-md border-b border-red-800/60"
         }`}
       >
@@ -468,7 +468,7 @@ export default function HomePage() {
         </div>
       </section>
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-red-900 text-white">
+      <section className="py-20 px-4 bg-gradient-to-b from-red-950 via-red-900 to-black text-white">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to find your lost item?</h2>
           <p className="text-xl text-red-100 mb-8 max-w-2xl mx-auto">
