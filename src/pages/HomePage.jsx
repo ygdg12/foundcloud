@@ -219,66 +219,59 @@ export default function HomePage() {
 
       {/* Header */}
       <header
-        className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-500 ${
-          scrolled
-            ? "border-red-800/60 bg-gradient-to-b from-red-950/90 via-red-900/80 to-red-900/70 shadow-xl backdrop-blur-xl"
-            : "border-red-800/40 bg-gradient-to-b from-red-950/80 via-red-900/70 to-red-900/60 shadow-lg backdrop-blur-xl"
+        className={`fixed inset-x-0 top-0 z-50 border-b border-red-900/60 bg-red-900/95 backdrop-blur ${
+          scrolled ? "shadow-md" : "shadow-sm"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center justify-between h-16 sm:h-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <nav className="flex items-center justify-between h-16 sm:h-18">
             {/* Brand */}
             <div
-              className="flex items-center gap-3 cursor-pointer group"
+              className="flex items-center gap-3 cursor-pointer"
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             >
-              <div className="h-10 w-10 sm:h-12 sm:w-12 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-2">
+              <div className="h-9 w-9 sm:h-10 sm:w-10">
                 <img
                   src={LOGO_SRC}
                   alt="FoundCloud logo"
-                  className="h-full w-full object-contain drop-shadow-lg"
+                  className="h-full w-full object-contain"
                   loading="lazy"
                 />
               </div>
-              <div className="flex flex-col">
-                <span className="text-lg sm:text-2xl font-semibold sm:font-bold text-white tracking-tight group-hover:text-red-50 transition-colors duration-300">
-                  FoundCloud
-                </span>
-                <span className="text-[10px] sm:text-xs text-red-200/90 font-medium hidden sm:block">
-                  Reunite • Recover • Restore
-                </span>
-              </div>
+              <span className="text-lg sm:text-xl font-semibold tracking-tight text-white">
+                FoundCloud
+              </span>
             </div>
 
             {/* Desktop nav */}
-            <div className="hidden md:flex items-center gap-1 lg:gap-2">
+            <div className="hidden md:flex items-center gap-4">
               <button
                 type="button"
                 onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
-                className="px-3 py-2 text-red-100 hover:text-white text-sm font-medium rounded-full hover:bg-white/5 transition-all duration-200"
+                className="text-sm text-red-100 hover:text-white transition-colors"
               >
                 Features
               </button>
               <button
                 type="button"
                 onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}
-                className="px-3 py-2 text-red-100 hover:text-white text-sm font-medium rounded-full hover:bg-white/5 transition-all duration-200"
+                className="text-sm text-red-100 hover:text-white transition-colors"
               >
                 About
               </button>
               <button
                 type="button"
                 onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-                className="px-3 py-2 text-red-100 hover:text-white text-sm font-medium rounded-full hover:bg-white/5 transition-all duration-200"
+                className="text-sm text-red-100 hover:text-white transition-colors"
               >
                 Contact
               </button>
 
-              <div className="h-6 w-px bg-red-800/60 mx-2" />
+              <div className="h-6 w-px bg-red-800/70" />
 
               <button
                 onClick={handleSearch}
-                className="inline-flex items-center justify-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-full bg-white text-red-900 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+                className="inline-flex items-center gap-2 rounded-md bg-white text-red-900 px-3 py-2 text-sm font-semibold shadow-sm hover:bg-red-50 hover:shadow transition"
                 aria-label="Search Items"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,20 +279,19 @@ export default function HomePage() {
                 </svg>
                 <span>Search</span>
               </button>
-
               <button
                 onClick={handleSignOut}
-                className="ml-1 inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-full border border-white/15 text-red-50 hover:bg-white/10 hover:border-white/30 transition-all duration-200"
+                className="rounded-md border border-red-300/60 px-3 py-2 text-sm font-semibold text-red-50 hover:bg-red-800 transition"
               >
                 Logout
               </button>
             </div>
 
-            {/* Mobile header actions */}
+            {/* Mobile actions */}
             <div className="md:hidden flex items-center gap-2">
               <button
                 onClick={handleSearch}
-                className="text-white bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-all duration-200"
+                className="text-white bg-white/10 hover:bg-white/20 p-2 rounded-md transition"
                 aria-label="Search Items"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -308,7 +300,7 @@ export default function HomePage() {
               </button>
               <button
                 onClick={handleSignOut}
-                className="text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200"
+                className="text-white border border-white/20 px-3 py-1.5 text-xs rounded-md hover:bg-white/10 transition"
               >
                 Logout
               </button>
@@ -483,137 +475,88 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-b from-red-950 via-slate-950 to-black text-white pt-12 pb-8 px-4 mt-12 border-t border-red-900/40">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid gap-10 md:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] items-start">
-            {/* Brand blurb */}
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-9 w-9 sm:h-10 sm:w-10">
+      <footer className="mt-12 border-t border-red-100 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
+            {/* Brand */}
+            <div className="max-w-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-8 w-8">
                   <img
                     src={LOGO_SRC}
                     alt="FoundCloud logo"
-                    className="h-full w-full object-contain drop-shadow-md"
+                    className="h-full w-full object-contain"
                     loading="lazy"
                   />
                 </div>
-                <span className="text-xl font-semibold tracking-tight">FoundCloud</span>
+                <span className="text-base font-semibold text-gray-900">FoundCloud</span>
               </div>
-              <p className="text-sm text-red-200/80 max-w-sm">
-                A modern lost &amp; found experience for campuses and communities, helping people reunite with the
-                things that matter most.
+              <p className="text-sm text-gray-500">
+                Connecting communities to safely report, find, and return lost items on and around campus.
               </p>
             </div>
 
-            {/* Product links */}
-            <div>
-              <h3 className="font-semibold mb-4 text-white text-sm tracking-wide uppercase">Product</h3>
-              <ul className="space-y-2 text-sm text-red-200/80">
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
-                    className="hover:text-white transition-colors duration-150"
-                  >
-                    Features
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="hover:text-white transition-colors duration-150"
-                  >
-                    How It Works
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="hover:text-white transition-colors duration-150"
-                  >
-                    Success Stories
-                  </button>
-                </li>
-              </ul>
-            </div>
+            {/* Simple link columns */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-sm text-gray-500">
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900 text-xs uppercase tracking-wide">Product</h3>
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
+                  className="block hover:text-gray-900"
+                >
+                  Features
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  className="block hover:text-gray-900"
+                >
+                  How it works
+                </button>
+              </div>
 
-            {/* Company links */}
-            <div>
-              <h3 className="font-semibold mb-4 text-white text-sm tracking-wide uppercase">Company</h3>
-              <ul className="space-y-2 text-sm text-red-200/80">
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="hover:text-white transition-colors duration-150"
-                  >
-                    About
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="hover:text-white transition-colors duration-150"
-                  >
-                    Community
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="hover:text-white transition-colors duration-150"
-                  >
-                    News
-                  </button>
-                </li>
-              </ul>
-            </div>
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900 text-xs uppercase tracking-wide">Company</h3>
+                <button
+                  type="button"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  className="block hover:text-gray-900"
+                >
+                  About
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  className="block hover:text-gray-900"
+                >
+                  Community
+                </button>
+              </div>
 
-            {/* Support & legal */}
-            <div>
-              <h3 className="font-semibold mb-4 text-white text-sm tracking-wide uppercase">Support</h3>
-              <ul className="space-y-2 text-sm text-red-200/80">
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="hover:text-white transition-colors duration-150"
-                  >
-                    Help Center
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="hover:text-white transition-colors duration-150"
-                  >
-                    Contact
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="hover:text-white transition-colors duration-150"
-                  >
-                    Privacy
-                  </button>
-                </li>
-              </ul>
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900 text-xs uppercase tracking-wide">Support</h3>
+                <button
+                  type="button"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  className="block hover:text-gray-900"
+                >
+                  Help center
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  className="block hover:text-gray-900"
+                >
+                  Contact
+                </button>
+              </div>
             </div>
           </div>
-          <div className="mt-8 pt-6 border-t border-red-900/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-red-300/80">
-            <p className="order-2 sm:order-1">&copy; 2025 FoundCloud. All rights reserved.</p>
-            <div className="order-1 sm:order-2 flex items-center gap-3">
-              <span className="uppercase tracking-[0.2em] text-[10px] text-red-400/80">Built for WSU</span>
-              <span className="h-1 w-1 rounded-full bg-red-500/70" />
-              <span className="text-[10px] text-red-400/80">Secure • Fast • Reliable</span>
-            </div>
+
+          <div className="mt-8 pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
+            <p>&copy; 2025 FoundCloud. All rights reserved.</p>
+            <p className="text-[11px]">Built for WSU · Secure • Fast · Reliable</p>
           </div>
         </div>
       </footer>
