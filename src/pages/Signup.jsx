@@ -329,24 +329,28 @@ export default function Signup() {
         const needsApproval = userRole === "user" && userStatus === "pending"
         
         if (needsApproval) {
-          // Don't auto-login pending users
+          // Store user data and token (token may be limited but allows status checking)
+          const serverRole = userRole === "staff" ? "security" : userRole
+          const allowedRoles = ["user", "security", "admin"]
+          const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
+          const pendingUser = { ...rawUser, role: normalizedRole, status: "pending" }
+          
+          // Store token and user data (token might allow status checking even if not full access)
+          if (data.token) {
+            localStorage.setItem("authToken", data.token)
+          }
+          localStorage.setItem("user", JSON.stringify(pendingUser))
+          
           dispatch({ 
             type: "SET_STATUS", 
             field: "success", 
-            value: "Account created successfully! Please wait for admin approval before signing in." 
+            value: "Account created successfully! Redirecting to approval page..." 
           })
           
-          // Clear form and redirect to signin after a delay
+          // Redirect to pending page after a short delay
           setTimeout(() => {
-            dispatch({ type: "TOGGLE_AUTH_MODE" }) // Switch to signin mode
-            dispatch({ type: "RESET" })
-            // Show info message on signin page
-            const infoMessage = "Your account is pending approval. Please wait for admin approval."
-            navigate("/signin", { 
-              replace: true,
-              state: { infoMessage }
-            })
-          }, 2000)
+            navigate("/pending", { replace: true })
+          }, 1500)
         } else {
           // Staff/admin are auto-approved, proceed with normal login
           dispatch({ type: "SET_STATUS", field: "success", value: data.message })
@@ -381,11 +385,19 @@ export default function Signup() {
         const rejectionReason = data.reason || data.user?.rejectionReason
         
         if (userStatus === "pending") {
-          dispatch({ 
-            type: "SET_STATUS", 
-            field: "error", 
-            value: "Your account is pending approval. Please wait for admin approval." 
-          })
+          // Store user data and redirect to pending page
+          const serverRole = rawUser.role === "staff" ? "security" : rawUser.role
+          const allowedRoles = ["user", "security", "admin"]
+          const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
+          const pendingUser = { ...rawUser, role: normalizedRole, status: "pending" }
+          
+          localStorage.setItem("user", JSON.stringify(pendingUser))
+          if (data.token) {
+            localStorage.setItem("authToken", data.token)
+          }
+          
+          // Redirect to pending page
+          navigate("/pending", { replace: true })
           return
         }
         

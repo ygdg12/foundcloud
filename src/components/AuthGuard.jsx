@@ -26,14 +26,14 @@ const AuthGuard = ({ children, allowedRoles = [] }) => {
   const isApproved = isAutoApproved || userStatus === "approved"
   
   if (!isApproved) {
-    // Redirect to signin with appropriate message
+    // Redirect pending users to pending page, rejected users to signin
     if (userStatus === "pending") {
-      return <Navigate to="/signin" state={{ infoMessage: "Your account is pending approval. Please wait for admin approval." }} replace />
+      return <Navigate to="/pending" replace />
     } else if (userStatus === "rejected") {
       return <Navigate to="/signin" state={{ infoMessage: "Your account has been rejected. Please contact support." }} replace />
     }
-    // Fallback for any other status
-    return <Navigate to="/signin" state={{ infoMessage: "Your account is not approved. Please contact support." }} replace />
+    // Fallback for any other status - redirect to pending page
+    return <Navigate to="/pending" replace />
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
