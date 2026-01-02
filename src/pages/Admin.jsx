@@ -149,13 +149,21 @@ export default function Admin() {
   const handleApproveUser = async (userId) => {
     try {
       const token = localStorage.getItem("authToken")
+      if (!token) {
+        alert("Authentication token not found. Please sign in again.")
+        return
+      }
+
       const response = await fetch(`${BASE_URL}/api/admin/users/${userId}/approve`, {
         method: "PATCH",
         headers: { 
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Accept": "application/json"
         },
+        mode: "cors", // Explicitly set CORS mode
       })
+      
       if (response.ok) {
         // Refresh pending users list
         fetchPendingUsers()
@@ -165,12 +173,29 @@ export default function Admin() {
         }
         alert("User approved successfully")
       } else {
-        const errorData = await response.json()
-        alert(errorData.message || "Failed to approve user")
+        let errorMessage = "Failed to approve user"
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage
+        }
+        
+        if (response.status === 0 || response.status === 500) {
+          errorMessage = "Network error or CORS issue. Please check your backend CORS configuration."
+        }
+        
+        alert(errorMessage)
+        console.error("Approve user error:", response.status, errorMessage)
       }
     } catch (error) {
       console.error("Error approving user:", error)
-      alert("Error approving user")
+      if (error.message.includes("CORS") || error.message.includes("Failed to fetch")) {
+        alert("CORS error: Please ensure the backend allows requests from this origin. Error: " + error.message)
+      } else {
+        alert("Error approving user: " + error.message)
+      }
     }
   }
 
@@ -179,15 +204,23 @@ export default function Admin() {
 
     try {
       const token = localStorage.getItem("authToken")
+      if (!token) {
+        alert("Authentication token not found. Please sign in again.")
+        return
+      }
+
       const userId = userToReject._id || userToReject.id
       const response = await fetch(`${BASE_URL}/api/admin/users/${userId}/reject`, {
         method: "PATCH",
         headers: { 
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Accept": "application/json"
         },
+        mode: "cors", // Explicitly set CORS mode
         body: JSON.stringify({ reason: rejectReason || undefined }),
       })
+      
       if (response.ok) {
         // Refresh pending users list
         fetchPendingUsers()
@@ -200,12 +233,28 @@ export default function Admin() {
         setRejectReason("")
         alert("User rejected successfully")
       } else {
-        const errorData = await response.json()
-        alert(errorData.message || "Failed to reject user")
+        let errorMessage = "Failed to reject user"
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+        } catch (e) {
+          errorMessage = response.statusText || errorMessage
+        }
+        
+        if (response.status === 0 || response.status === 500) {
+          errorMessage = "Network error or CORS issue. Please check your backend CORS configuration."
+        }
+        
+        alert(errorMessage)
+        console.error("Reject user error:", response.status, errorMessage)
       }
     } catch (error) {
       console.error("Error rejecting user:", error)
-      alert("Error rejecting user")
+      if (error.message.includes("CORS") || error.message.includes("Failed to fetch")) {
+        alert("CORS error: Please ensure the backend allows requests from this origin. Error: " + error.message)
+      } else {
+        alert("Error rejecting user: " + error.message)
+      }
     }
   }
 

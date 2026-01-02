@@ -21,19 +21,23 @@ const AuthGuard = ({ children, allowedRoles = [] }) => {
   const userStatus = user?.status
   const userRole = user?.role
   
-  // Staff and admin are auto-approved, so they don't have status or have status "approved"
+  // Staff and admin are auto-approved - they should NEVER be blocked regardless of status
   const isAutoApproved = userRole === "admin" || userRole === "security" || userRole === "staff"
-  const isApproved = isAutoApproved || userStatus === "approved"
   
-  if (!isApproved) {
-    // Redirect pending users to pending page, rejected users to signin
-    if (userStatus === "pending") {
+  // Only check status for regular users (not admin/security/staff)
+  if (!isAutoApproved) {
+    const isApproved = userStatus === "approved"
+    
+    if (!isApproved) {
+      // Redirect pending users to pending page, rejected users to signin
+      if (userStatus === "pending") {
+        return <Navigate to="/pending" replace />
+      } else if (userStatus === "rejected") {
+        return <Navigate to="/signin" state={{ infoMessage: "Your account has been rejected. Please contact support." }} replace />
+      }
+      // Fallback for any other status - redirect to pending page
       return <Navigate to="/pending" replace />
-    } else if (userStatus === "rejected") {
-      return <Navigate to="/signin" state={{ infoMessage: "Your account has been rejected. Please contact support." }} replace />
     }
-    // Fallback for any other status - redirect to pending page
-    return <Navigate to="/pending" replace />
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {

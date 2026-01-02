@@ -339,12 +339,11 @@ export default function Signup() {
                                formRole === "admin" || formRole === "staff" || formRole === "security"
         const isApproved = userStatus === "approved"
         
-        // Simplified: If form role is "user", always redirect to pending unless explicitly approved
-        // OR if response role is "user" and not approved
-        // Most reliable: if formRole is "user", always needs approval (pending page will handle status)
-        const needsApproval = formRole === "user" || ((userRole === "user") && !isApproved && !isStaffOrAdmin)
+        // IMPORTANT: Only regular users (role === "user") need approval
+        // Staff and admin should NEVER be redirected to pending page
+        const needsApproval = !isStaffOrAdmin && (formRole === "user" || userRole === "user") && !isApproved
         
-        console.log("needsApproval:", needsApproval, "isStaffOrAdmin:", isStaffOrAdmin, "isApproved:", isApproved)
+        console.log("Approval check - isStaffOrAdmin:", isStaffOrAdmin, "needsApproval:", needsApproval, "formRole:", formRole, "userRole:", userRole)
         
         if (needsApproval) {
           // Store user data and token (token may be limited but allows status checking)

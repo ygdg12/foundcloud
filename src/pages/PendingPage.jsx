@@ -34,9 +34,13 @@ export default function PendingPage() {
       const userStatus = userData.status || "pending"
       setStatus(userStatus)
 
-      // Staff and admin are auto-approved
-      if (userData.role === "admin" || userData.role === "security" || userData.role === "staff") {
-        navigate("/dashboard", { replace: true })
+      // Staff and admin are auto-approved - redirect immediately, don't show pending page
+      const userRole = userData.role
+      if (userRole === "admin" || userRole === "security" || userRole === "staff") {
+        console.log("Admin/Security/Staff user detected, redirecting to dashboard")
+        // Determine correct destination based on role
+        const destination = userRole === "admin" ? "/admin" : userRole === "security" ? "/security" : "/dashboard"
+        navigate(destination, { replace: true })
         return
       }
 
