@@ -20,39 +20,56 @@ const AuthGuard = ({ children, allowedRoles = [], requirePendingStatus = false }
   const userStatus = user?.status
   const userRole = user?.role
   
-  // Staff and admin are auto-approved - they should NEVER be blocked regardless of status
+  // CRITICAL: Staff and admin are auto-approved - they should NEVER be blocked regardless of status
+  // Check role FIRST before any status checks
   const isAutoApproved = userRole === "admin" || userRole === "security" || userRole === "staff"
   
   // Special handling for pending page - ONLY allow regular users with pending status
   if (requirePendingStatus) {
-    // If admin/security tries to access pending page, redirect them to their dashboard
+    // CRITICAL: If admin/security/staff tries to access pending page, redirect them immediately
+    // This check MUST happen first to prevent admin/security from seeing pending page
     if (isAutoApproved) {
+      console.log("AuthGuard: Admin/Security/Staff user tried to access pending page, redirecting")
       const destination = userRole === "admin" ? "/admin" : userRole === "security" ? "/security" : "/dashboard"
       return <Navigate to={destination} replace />
     }
     // Only allow users with role "user" and status "pending"
-    if (userRole !== "user" || userStatus !== "pending") {
+    // If role is not "user", redirect to dashboard
+    if (userRole !== "user") {
+      console.log("AuthGuard: Non-user role tried to access pending page, redirecting")
+      return <Navigate to="/dashboard" replace />
+    }
+    // If status is not "pending", redirect to dashboard
+    if (userStatus !== "pending") {
+      console.log("AuthGuard: User status is not pending, redirecting")
       return <Navigate to="/dashboard" replace />
     }
     // User is a regular user with pending status - allow access to pending page
     return children
   }
   
-  // For all other routes, check status for regular users only
+  // For all other routes, check status for regular users ONLY
+  // Admin/security/staff bypass all status checks
   if (!isAutoApproved) {
+    // Only regular users need approval
     const isApproved = userStatus === "approved"
     
     if (!isApproved) {
       // Redirect pending users to pending page, rejected users to signin
       if (userStatus === "pending") {
+        console.log("AuthGuard: Regular user with pending status, redirecting to pending page")
         return <Navigate to="/pending" replace />
       } else if (userStatus === "rejected") {
+        console.log("AuthGuard: Regular user with rejected status, redirecting to signin")
         return <Navigate to="/signin" state={{ infoMessage: "Your account has been rejected. Please contact support." }} replace />
       }
       // Fallback for any other status - redirect to pending page
+      console.log("AuthGuard: Regular user with unknown status, redirecting to pending page")
       return <Navigate to="/pending" replace />
     }
   }
+  
+  // Admin/security/staff users pass through here without status checks
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     return <Navigate to="/unauthorized" replace />

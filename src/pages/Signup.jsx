@@ -282,7 +282,11 @@ export default function Signup() {
 
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        mode: "cors",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
         body: JSON.stringify(payload),
       })
 
@@ -401,7 +405,8 @@ export default function Signup() {
               authToken: localStorage.getItem("authToken"),
               user: localStorage.getItem("user"),
             })
-            const destination = user.role === "security" ? "/security" : "/dashboard"
+            // Redirect based on role: admin -> /admin, security -> /security, user -> /dashboard
+            const destination = user.role === "admin" ? "/admin" : user.role === "security" ? "/security" : "/dashboard"
             navigate(destination, { replace: true })
           }, 200)
         }
@@ -461,7 +466,8 @@ export default function Signup() {
             authToken: localStorage.getItem("authToken"),
             user: localStorage.getItem("user"),
           })
-          const destination = user.role === "security" ? "/security" : "/dashboard"
+          // Redirect based on role: admin -> /admin, security -> /security, user -> /dashboard
+          const destination = user.role === "admin" ? "/admin" : user.role === "security" ? "/security" : "/dashboard"
           navigate(destination, { replace: true })
         }, 200)
       }
@@ -828,7 +834,11 @@ export default function Signup() {
                         try {
                           const response = await fetch(`${BASE_URL}/api/auth/signin`, {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            mode: "cors",
+                            headers: { 
+                              "Content-Type": "application/json",
+                              "Accept": "application/json"
+                            },
                             body: JSON.stringify({ email: state.adminEmail, password: state.adminPassword }),
                           })
 
@@ -840,10 +850,26 @@ export default function Signup() {
                           }
 
                           if (response.ok) {
+                            // Normalize user and role from response
+                            const rawUser = data.user || { role: "admin", email: state.adminEmail }
+                            const serverRole = rawUser.role === "staff" ? "security" : rawUser.role
+                            const allowedRoles = ["user", "security", "admin"]
+                            const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "admin"
+                            const user = { ...rawUser, role: normalizedRole }
+                            
+                            // Store admin user data - this will overwrite any previous user data
                             localStorage.setItem("authToken", data.token || "admin-authenticated")
-                            localStorage.setItem("user", JSON.stringify(data.user || { role: "admin", email: state.adminEmail }))
+                            localStorage.setItem("user", JSON.stringify(user))
+                            
+                            // Dispatch auth change event to update AuthContext
+                            window.dispatchEvent(new Event("authChange"))
+                            
                             dispatch({ type: "TOGGLE_ADMIN_MODAL" })
-                            window.location.href = "/Admin"
+                            
+                            // Wait a moment for AuthContext to update, then navigate
+                            setTimeout(() => {
+                              navigate("/admin", { replace: true })
+                            }, 100)
                           } else {
                             dispatch({ type: "SET_STATUS", field: "error", value: data?.message || data?.error || "Invalid credentials" })
                           }

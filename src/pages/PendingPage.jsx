@@ -20,12 +20,14 @@ export default function PendingPage() {
   const { logout } = useAuth()
 
   useEffect(() => {
-    // Get user from localStorage - ONLY show pending page for regular users with pending status
+    // CRITICAL: Get user from localStorage and check role IMMEDIATELY
+    // This check MUST happen before any rendering to prevent admin/security from seeing pending page
     try {
       const userData = JSON.parse(localStorage.getItem("user") || "null")
       const token = localStorage.getItem("authToken")
       
       if (!userData || !token) {
+        console.log("PendingPage: No user data or token, redirecting to signin")
         navigate("/signin", { replace: true })
         return
       }
@@ -33,41 +35,47 @@ export default function PendingPage() {
       const userRole = userData.role
       const userStatus = userData.status || "pending"
 
-      // CRITICAL: Staff and admin are auto-approved - redirect immediately, don't show pending page
-      // This check MUST happen first to prevent admin/security from seeing pending page
+      // CRITICAL CHECK #1: Staff and admin are auto-approved - redirect IMMEDIATELY
+      // This check MUST happen FIRST to prevent admin/security from seeing pending page
+      // Check for all possible admin/security role variations
       if (userRole === "admin" || userRole === "security" || userRole === "staff") {
-        console.log("Admin/Security/Staff user detected on pending page, redirecting immediately")
+        console.log("PendingPage: Admin/Security/Staff user detected, redirecting immediately to:", userRole)
         // Determine correct destination based on role
         const destination = userRole === "admin" ? "/admin" : userRole === "security" ? "/security" : "/dashboard"
         navigate(destination, { replace: true })
         return
       }
 
-      // ONLY regular users (role === "user") with pending status should see this page
+      // CRITICAL CHECK #2: ONLY regular users (role === "user") should see this page
+      // If role is anything other than "user", redirect immediately
       if (userRole !== "user") {
-        console.log("Non-user role detected on pending page, redirecting to dashboard")
+        console.log("PendingPage: Non-user role detected:", userRole, "redirecting to dashboard")
         navigate("/dashboard", { replace: true })
         return
       }
 
-      // If already approved, redirect to home
+      // CRITICAL CHECK #3: If already approved, redirect to home immediately
       if (userStatus === "approved") {
+        console.log("PendingPage: User already approved, redirecting to dashboard")
         navigate("/dashboard", { replace: true })
         return
       }
 
-      // Only show pending page if: role is "user" AND status is "pending"
+      // CRITICAL CHECK #4: Only show pending page if: role is "user" AND status is "pending"
       if (userStatus !== "pending") {
-        console.log("User status is not pending, redirecting")
+        console.log("PendingPage: User status is not pending:", userStatus, "redirecting to dashboard")
         navigate("/dashboard", { replace: true })
         return
       }
 
+      // All checks passed - this is a regular user with pending status
+      // Safe to show pending page
+      console.log("PendingPage: Regular user with pending status, showing pending page")
       setUser(userData)
       setStatus(userStatus)
       setLoading(false)
     } catch (error) {
-      console.error("Error loading user:", error)
+      console.error("PendingPage: Error loading user:", error)
       navigate("/signin", { replace: true })
     }
   }, [navigate])
