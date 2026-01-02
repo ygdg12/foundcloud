@@ -20,64 +20,112 @@ export default function PendingPage() {
   const { logout } = useAuth()
 
   useEffect(() => {
-    // CRITICAL: Get user from localStorage and check role IMMEDIATELY
-    // This check MUST happen before any rendering to prevent admin/security from seeing pending page
-    try {
-      const userData = JSON.parse(localStorage.getItem("user") || "null")
-      const token = localStorage.getItem("authToken")
-      
-      if (!userData || !token) {
-        console.log("PendingPage: No user data or token, redirecting to signin")
+    // CRITICAL: Fetch user data from /api/auth/me to get latest role and status
+    // This ensures we have the most up-to-date information from the backend
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem("authToken")
+        const cachedUserData = JSON.parse(localStorage.getItem("user") || "null")
+        
+        if (!token) {
+          console.log("PendingPage: No token, redirecting to signin")
+          navigate("/signin", { replace: true })
+          return
+        }
+
+        // Fetch latest user data from /api/auth/me
+        let userData = cachedUserData
+        let userRole = cachedUserData?.role
+        let userStatus = cachedUserData?.status || "pending"
+
+        try {
+          const response = await fetch(`${BASE_URL}/api/auth/me`, {
+            method: "GET",
+            mode: "cors",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            }
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            // Handle both { user: {...} } and direct user object responses
+            const fetchedUser = data.user || data
+            
+            // Normalize role (staff -> security)
+            const serverRole = fetchedUser.role === "staff" ? "security" : fetchedUser.role
+            const allowedRoles = ["user", "security", "admin"]
+            const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
+            
+            userData = { ...fetchedUser, role: normalizedRole }
+            userRole = normalizedRole
+            userStatus = fetchedUser.status || "pending"
+            
+            // Update localStorage with latest data
+            localStorage.setItem("user", JSON.stringify(userData))
+          } else {
+            console.warn("PendingPage: Failed to fetch from /api/auth/me, using cached data")
+            // Use cached data if API fails
+            if (!cachedUserData) {
+              navigate("/signin", { replace: true })
+              return
+            }
+          }
+        } catch (apiError) {
+          console.warn("PendingPage: Error fetching from /api/auth/me:", apiError)
+          // Use cached data if API fails
+          if (!cachedUserData) {
+            navigate("/signin", { replace: true })
+            return
+          }
+        }
+
+        // CRITICAL CHECK #1: Staff and admin are auto-approved - redirect IMMEDIATELY
+        // This check MUST happen FIRST to prevent admin/security from seeing pending page
+        if (userRole === "admin" || userRole === "security" || userRole === "staff") {
+          console.log("PendingPage: Admin/Security/Staff user detected, redirecting immediately to:", userRole)
+          const destination = userRole === "admin" ? "/admin" : userRole === "security" ? "/security" : "/dashboard"
+          navigate(destination, { replace: true })
+          return
+        }
+
+        // CRITICAL CHECK #2: ONLY regular users (role === "user") should see this page
+        // If role is anything other than "user", redirect immediately
+        if (userRole !== "user") {
+          console.log("PendingPage: Non-user role detected:", userRole, "redirecting to dashboard")
+          navigate("/dashboard", { replace: true })
+          return
+        }
+
+        // CRITICAL CHECK #3: If already approved, redirect to home immediately
+        if (userStatus === "approved") {
+          console.log("PendingPage: User already approved, redirecting to dashboard")
+          navigate("/dashboard", { replace: true })
+          return
+        }
+
+        // CRITICAL CHECK #4: Only show pending page if: role is "user" AND status is "pending"
+        if (userStatus !== "pending") {
+          console.log("PendingPage: User status is not pending:", userStatus, "redirecting to dashboard")
+          navigate("/dashboard", { replace: true })
+          return
+        }
+
+        // All checks passed - this is a regular user with pending status
+        // Safe to show pending page
+        console.log("PendingPage: Regular user with pending status, showing pending page")
+        setUser(userData)
+        setStatus(userStatus)
+        setLoading(false)
+      } catch (error) {
+        console.error("PendingPage: Error loading user:", error)
         navigate("/signin", { replace: true })
-        return
       }
-
-      const userRole = userData.role
-      const userStatus = userData.status || "pending"
-
-      // CRITICAL CHECK #1: Staff and admin are auto-approved - redirect IMMEDIATELY
-      // This check MUST happen FIRST to prevent admin/security from seeing pending page
-      // Check for all possible admin/security role variations
-      if (userRole === "admin" || userRole === "security" || userRole === "staff") {
-        console.log("PendingPage: Admin/Security/Staff user detected, redirecting immediately to:", userRole)
-        // Determine correct destination based on role
-        const destination = userRole === "admin" ? "/admin" : userRole === "security" ? "/security" : "/dashboard"
-        navigate(destination, { replace: true })
-        return
-      }
-
-      // CRITICAL CHECK #2: ONLY regular users (role === "user") should see this page
-      // If role is anything other than "user", redirect immediately
-      if (userRole !== "user") {
-        console.log("PendingPage: Non-user role detected:", userRole, "redirecting to dashboard")
-        navigate("/dashboard", { replace: true })
-        return
-      }
-
-      // CRITICAL CHECK #3: If already approved, redirect to home immediately
-      if (userStatus === "approved") {
-        console.log("PendingPage: User already approved, redirecting to dashboard")
-        navigate("/dashboard", { replace: true })
-        return
-      }
-
-      // CRITICAL CHECK #4: Only show pending page if: role is "user" AND status is "pending"
-      if (userStatus !== "pending") {
-        console.log("PendingPage: User status is not pending:", userStatus, "redirecting to dashboard")
-        navigate("/dashboard", { replace: true })
-        return
-      }
-
-      // All checks passed - this is a regular user with pending status
-      // Safe to show pending page
-      console.log("PendingPage: Regular user with pending status, showing pending page")
-      setUser(userData)
-      setStatus(userStatus)
-      setLoading(false)
-    } catch (error) {
-      console.error("PendingPage: Error loading user:", error)
-      navigate("/signin", { replace: true })
     }
+
+    fetchUserData()
   }, [navigate])
 
   // Check user status periodically or on button click
@@ -87,88 +135,81 @@ export default function PendingPage() {
     setChecking(true)
     try {
       const token = localStorage.getItem("authToken")
-      const userEmail = user.email
       
-      // Try multiple endpoints to get user info
-      const endpoints = [
-        `${BASE_URL}/api/auth/me`,
-        `${BASE_URL}/api/users/me`,
-        `${BASE_URL}/api/user/me`,
-      ]
-      
-      let updatedUser = null
-      let newStatus = status
-
-      for (const endpoint of endpoints) {
-        try {
-          const response = await fetch(endpoint, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-
-          if (response.ok) {
-            const data = await response.json()
-            updatedUser = data.user || data
-            newStatus = updatedUser.status || "pending"
-            break
-          }
-        } catch (err) {
-          // Try next endpoint
-          continue
-        }
+      if (!token) {
+        console.log("PendingPage: No token found, redirecting to signin")
+        navigate("/signin", { replace: true })
+        return
       }
 
-      // If we couldn't get user info from those endpoints, try signing in again
-      // This will get the latest user status from the backend
-      if (!updatedUser && userEmail) {
-        try {
-          // Try to get user from admin endpoint (if token allows)
-          const adminResponse = await fetch(`${BASE_URL}/api/admin/users`, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          if (adminResponse.ok) {
-            const adminData = await adminResponse.json()
-            const foundUser = (adminData.users || []).find(u => u.email === userEmail)
-            if (foundUser) {
-              updatedUser = foundUser
-              newStatus = foundUser.status || "pending"
-            }
-          }
-        } catch (err) {
-          console.log("Could not fetch from admin endpoint:", err)
+      // Use /api/auth/me endpoint (now live)
+      const response = await fetch(`${BASE_URL}/api/auth/me`, {
+        method: "GET",
+        mode: "cors",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
         }
+      })
+
+      if (!response.ok) {
+        console.warn("PendingPage: Failed to fetch user status from /api/auth/me")
+        setChecking(false)
+        return
       }
 
-      // If we got updated user info
-      if (updatedUser) {
-        // Update localStorage
-        const serverRole = updatedUser.role === "staff" ? "security" : updatedUser.role
-        const allowedRoles = ["user", "security", "admin"]
-        const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
-        const normalizedUser = { ...updatedUser, role: normalizedRole }
-        
+      const data = await response.json()
+      // Handle both { user: {...} } and direct user object responses
+      const updatedUser = data.user || data
+      
+      // Normalize role (staff -> security)
+      const serverRole = updatedUser.role === "staff" ? "security" : updatedUser.role
+      const allowedRoles = ["user", "security", "admin"]
+      const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
+      const normalizedUser = { ...updatedUser, role: normalizedRole }
+      
+      const newStatus = updatedUser.status || "pending"
+      const newRole = normalizedRole
+
+      // CRITICAL ROLE CHECK: If role changed to admin/security, redirect immediately
+      if (newRole === "admin" || newRole === "security" || newRole === "staff") {
+        console.log("PendingPage: User role changed to admin/security, redirecting")
+        const destination = newRole === "admin" ? "/admin" : newRole === "security" ? "/security" : "/dashboard"
         localStorage.setItem("user", JSON.stringify(normalizedUser))
-
-        // If approved, redirect to home immediately
-        if (newStatus === "approved") {
-          console.log("User approved! Redirecting to dashboard...")
-          window.dispatchEvent(new Event("authChange"))
-          // Small delay to ensure state is updated
-          setTimeout(() => {
-            navigate("/dashboard", { replace: true })
-          }, 100)
-          return
-        }
-
-        // Update status
-        setStatus(newStatus)
-        setUser(normalizedUser)
-      } else {
-        // If we can't get user info, the token might be invalid
-        // User should sign in again after approval
-        console.log("Could not fetch user status. User may need to sign in again after approval.")
+        window.dispatchEvent(new Event("authChange"))
+        navigate(destination, { replace: true })
+        return
       }
+
+      // CRITICAL ROLE CHECK: Only regular users should see pending page
+      if (newRole !== "user") {
+        console.log("PendingPage: User role is not 'user':", newRole, "redirecting")
+        localStorage.setItem("user", JSON.stringify(normalizedUser))
+        window.dispatchEvent(new Event("authChange"))
+        navigate("/dashboard", { replace: true })
+        return
+      }
+
+      // Update localStorage with latest data
+      localStorage.setItem("user", JSON.stringify(normalizedUser))
+
+      // If approved, redirect to home immediately
+      if (newStatus === "approved") {
+        console.log("PendingPage: User approved! Redirecting to dashboard...")
+        window.dispatchEvent(new Event("authChange"))
+        setTimeout(() => {
+          navigate("/dashboard", { replace: true })
+        }, 100)
+        return
+      }
+
+      // Update status (still pending)
+      setStatus(newStatus)
+      setUser(normalizedUser)
     } catch (error) {
-      console.error("Error checking status:", error)
+      console.error("PendingPage: Error checking status:", error)
+      // If there's a network error, don't update state but allow user to retry
     } finally {
       setChecking(false)
     }
