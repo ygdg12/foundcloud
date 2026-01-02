@@ -58,9 +58,32 @@ export default function SecurityOfficer() {
   }
 
   useEffect(() => {
+    // Check if user is security officer or admin
+    try {
+      const u = JSON.parse(localStorage.getItem("user") || "null")
+      const token = localStorage.getItem("authToken")
+      
+      if (!u || !token || (u.role !== "security" && u.role !== "staff" && u.role !== "admin")) {
+        navigate("/signin", { replace: true })
+        return
+      }
+
+      // Security officers should never be on pending page - redirect if somehow they are
+      if (u.status === "pending" && u.role === "user") {
+        console.warn("Security officer has wrong status - clearing and redirecting")
+        localStorage.removeItem("user")
+        localStorage.removeItem("authToken")
+        navigate("/signin", { replace: true })
+        return
+      }
+    } catch {
+      navigate("/signin", { replace: true })
+      return
+    }
+
     fetchClaims()
     fetchFoundItems()
-  }, [])
+  }, [navigate])
 
   const stats = useMemo(() => {
     const total = claims.length

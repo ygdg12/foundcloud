@@ -2,7 +2,7 @@
 import { Navigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
 
-const AuthGuard = ({ children, allowedRoles = [] }) => {
+const AuthGuard = ({ children, allowedRoles = [], requirePendingStatus = false }) => {
   const { user, isAuthenticated, loading } = useAuth()
 
   if (loading) {
@@ -17,14 +17,28 @@ const AuthGuard = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/signin" replace />
   }
 
-  // Check user status - only allow approved users (staff and admin are auto-approved)
   const userStatus = user?.status
   const userRole = user?.role
   
   // Staff and admin are auto-approved - they should NEVER be blocked regardless of status
   const isAutoApproved = userRole === "admin" || userRole === "security" || userRole === "staff"
   
-  // Only check status for regular users (not admin/security/staff)
+  // Special handling for pending page - ONLY allow regular users with pending status
+  if (requirePendingStatus) {
+    // If admin/security tries to access pending page, redirect them to their dashboard
+    if (isAutoApproved) {
+      const destination = userRole === "admin" ? "/admin" : userRole === "security" ? "/security" : "/dashboard"
+      return <Navigate to={destination} replace />
+    }
+    // Only allow users with role "user" and status "pending"
+    if (userRole !== "user" || userStatus !== "pending") {
+      return <Navigate to="/dashboard" replace />
+    }
+    // User is a regular user with pending status - allow access to pending page
+    return children
+  }
+  
+  // For all other routes, check status for regular users only
   if (!isAutoApproved) {
     const isApproved = userStatus === "approved"
     

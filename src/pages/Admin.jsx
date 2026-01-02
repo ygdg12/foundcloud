@@ -35,10 +35,25 @@ export default function Admin() {
   useEffect(() => {
     try {
       const u = JSON.parse(localStorage.getItem("user") || "null")
-      setUser(u)
-      if (!u || u.role !== "admin") {
+      const token = localStorage.getItem("authToken")
+      
+      // Check if user is admin - if not, redirect to signin
+      if (!u || !token || u.role !== "admin") {
         navigate("/signin", { replace: true })
+        return
       }
+
+      // CRITICAL: Admin should NEVER be on pending page - redirect if somehow they are
+      if (u.status === "pending" && u.role === "user") {
+        // This shouldn't happen, but if admin data is corrupted, clear it
+        console.warn("Admin user has pending status - clearing and redirecting")
+        localStorage.removeItem("user")
+        localStorage.removeItem("authToken")
+        navigate("/signin", { replace: true })
+        return
+      }
+
+      setUser(u)
     } catch {
       navigate("/signin", { replace: true })
     }
@@ -79,16 +94,27 @@ export default function Admin() {
         ? `${BASE_URL}/api/admin/users?status=${userStatusFilter}`
         : `${BASE_URL}/api/admin/users`
       const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        mode: "cors",
       })
       if (response.ok) {
         const data = await response.json()
         // Filter out admin users
         const filteredUsers = (data.users || []).filter((u) => u.role !== "admin")
         setUsers(filteredUsers)
+      } else {
+        console.error("Error fetching users:", response.status, response.statusText)
       }
     } catch (error) {
       console.error("Error fetching users:", error)
+      if (error.message.includes("Failed to fetch") || error.message.includes("CORS")) {
+        console.error("CORS Error: Backend needs to allow requests from:", window.location.origin)
+      }
     } finally {
       if (view !== "dashboard") {
         setLoading(false)
@@ -102,7 +128,13 @@ export default function Admin() {
       const token = localStorage.getItem("authToken")
       // Fetch all users and filter for pending, but also show recently approved/rejected
       const response = await fetch(`${BASE_URL}/api/admin/users`, {
-        headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        mode: "cors",
       })
       if (response.ok) {
         const data = await response.json()
@@ -129,18 +161,31 @@ export default function Admin() {
       } else {
         // Fallback: try the pending endpoint
         const pendingResponse = await fetch(`${BASE_URL}/api/admin/users/pending`, {
-          headers: { Authorization: `Bearer ${token}` },
+          method: "GET",
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          mode: "cors",
         })
         if (pendingResponse.ok) {
           const pendingData = await pendingResponse.json()
           setPendingUsers(pendingData.users || [])
         } else {
-          const errorData = await pendingResponse.json()
-          console.error("Error fetching pending users:", errorData.message || "Failed to fetch pending users")
+          try {
+            const errorData = await pendingResponse.json()
+            console.error("Error fetching pending users:", errorData.message || "Failed to fetch pending users")
+          } catch (e) {
+            console.error("Error fetching pending users:", pendingResponse.status, pendingResponse.statusText)
+          }
         }
       }
     } catch (error) {
       console.error("Error fetching pending users:", error)
+      if (error.message.includes("Failed to fetch") || error.message.includes("CORS")) {
+        console.error("CORS Error: Backend needs to allow requests from:", window.location.origin)
+      }
     } finally {
       setLoading(false)
     }
@@ -292,14 +337,25 @@ export default function Admin() {
     try {
       const token = localStorage.getItem("authToken")
       const response = await fetch(`${BASE_URL}/api/found-items`, {
-        headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        mode: "cors",
       })
       if (response.ok) {
         const data = await response.json()
         setFoundItems(data.items || [])
+      } else {
+        console.error("Error fetching found items:", response.status, response.statusText)
       }
     } catch (error) {
       console.error("Error fetching found items:", error)
+      if (error.message.includes("Failed to fetch") || error.message.includes("CORS")) {
+        console.error("CORS Error: Backend needs to allow requests from:", window.location.origin)
+      }
     } finally {
       if (view !== "dashboard") {
         setLoading(false)
@@ -315,14 +371,25 @@ export default function Admin() {
     try {
       const token = localStorage.getItem("authToken")
       const response = await fetch(`${BASE_URL}/api/lost-items`, {
-        headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        mode: "cors",
       })
       if (response.ok) {
         const data = await response.json()
         setLostItems(data.items || [])
+      } else {
+        console.error("Error fetching lost items:", response.status, response.statusText)
       }
     } catch (error) {
       console.error("Error fetching lost items:", error)
+      if (error.message.includes("Failed to fetch") || error.message.includes("CORS")) {
+        console.error("CORS Error: Backend needs to allow requests from:", window.location.origin)
+      }
     } finally {
       if (view !== "dashboard") {
         setLoading(false)
@@ -343,7 +410,12 @@ export default function Admin() {
       const userId = userToDelete._id || userToDelete.id
       const response = await fetch(`${BASE_URL}/api/admin/users/${userId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        mode: "cors",
       })
       if (response.ok) {
         setUsers(users.filter((u) => (u._id || u.id) !== userId))
@@ -373,7 +445,13 @@ export default function Admin() {
     try {
       const token = localStorage.getItem("authToken")
       const response = await fetch(`${BASE_URL}/api/admin/verification-codes`, {
-        headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        mode: "cors",
       })
       if (response.ok) {
         const data = await response.json()
@@ -396,8 +474,10 @@ export default function Admin() {
         method: "POST",
         headers: { 
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Accept": "application/json"
         },
+        mode: "cors",
       })
       if (response.ok) {
         const data = await response.json()
@@ -457,7 +537,12 @@ export default function Admin() {
       const codeId = codeToDelete._id || codeToDelete.id
       const response = await fetch(`${BASE_URL}/api/admin/verification-codes/${codeId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        mode: "cors",
       })
       if (response.ok) {
         setVerificationCodes(verificationCodes.filter((c) => (c._id || c.id) !== codeId))

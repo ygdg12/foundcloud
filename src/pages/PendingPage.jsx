@@ -20,7 +20,7 @@ export default function PendingPage() {
   const { logout } = useAuth()
 
   useEffect(() => {
-    // Get user from localStorage
+    // Get user from localStorage - ONLY show pending page for regular users with pending status
     try {
       const userData = JSON.parse(localStorage.getItem("user") || "null")
       const token = localStorage.getItem("authToken")
@@ -30,17 +30,23 @@ export default function PendingPage() {
         return
       }
 
-      setUser(userData)
-      const userStatus = userData.status || "pending"
-      setStatus(userStatus)
-
-      // Staff and admin are auto-approved - redirect immediately, don't show pending page
       const userRole = userData.role
+      const userStatus = userData.status || "pending"
+
+      // CRITICAL: Staff and admin are auto-approved - redirect immediately, don't show pending page
+      // This check MUST happen first to prevent admin/security from seeing pending page
       if (userRole === "admin" || userRole === "security" || userRole === "staff") {
-        console.log("Admin/Security/Staff user detected, redirecting to dashboard")
+        console.log("Admin/Security/Staff user detected on pending page, redirecting immediately")
         // Determine correct destination based on role
         const destination = userRole === "admin" ? "/admin" : userRole === "security" ? "/security" : "/dashboard"
         navigate(destination, { replace: true })
+        return
+      }
+
+      // ONLY regular users (role === "user") with pending status should see this page
+      if (userRole !== "user") {
+        console.log("Non-user role detected on pending page, redirecting to dashboard")
+        navigate("/dashboard", { replace: true })
         return
       }
 
@@ -50,6 +56,15 @@ export default function PendingPage() {
         return
       }
 
+      // Only show pending page if: role is "user" AND status is "pending"
+      if (userStatus !== "pending") {
+        console.log("User status is not pending, redirecting")
+        navigate("/dashboard", { replace: true })
+        return
+      }
+
+      setUser(userData)
+      setStatus(userStatus)
       setLoading(false)
     } catch (error) {
       console.error("Error loading user:", error)

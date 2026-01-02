@@ -18,7 +18,14 @@ function App() {
         <Routes>
           <Route path="/" element={<Signup />} />
           <Route path="/signin" element={<Signup />} />
-          <Route path="/pending" element={<PendingPage />} />
+          <Route 
+            path="/pending" 
+            element={
+              <AuthGuard allowedRoles={["user"]} requirePendingStatus={true}>
+                <PendingPage />
+              </AuthGuard>
+            } 
+          />
 
           {/* Public Found Items page (both cases) */}
           <Route path="/Founditems" element={<FoundItems />} />
