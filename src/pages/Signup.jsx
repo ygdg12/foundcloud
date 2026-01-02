@@ -321,19 +321,39 @@ export default function Signup() {
 
       // Handle signup response
       if (state.isSignup) {
-        const rawUser = data.user || {}
-        const userStatus = rawUser.status || "pending"
-        const userRole = rawUser.role || "user"
+        // Get user data from response - try multiple possible locations
+        const rawUser = data.user || data || {}
+        const userStatus = rawUser.status || data.status || "pending"
+        // Get role from user object, response, or payload
+        const userRole = rawUser.role || data.role || payload.role || "user"
+        // Also check the form role to be sure
+        const formRole = state.formData.role || (formData.get("role") === "security" ? "staff" : formData.get("role")) || "user"
+        
+        console.log("Signup response - Full data:", data)
+        console.log("Signup response - userRole:", userRole, "userStatus:", userStatus, "rawUser:", rawUser)
+        console.log("Signup response - payload.role:", payload.role, "formRole:", formRole)
         
         // Staff and admin are auto-approved, regular users need approval
-        const needsApproval = userRole === "user" && userStatus === "pending"
+        // Check if user needs approval: role is "user" and status is not "approved"
+        const isStaffOrAdmin = userRole === "admin" || userRole === "staff" || userRole === "security" || 
+                               formRole === "admin" || formRole === "staff" || formRole === "security"
+        const isApproved = userStatus === "approved"
+        
+        // Simplified: If form role is "user", always redirect to pending unless explicitly approved
+        // OR if response role is "user" and not approved
+        // Most reliable: if formRole is "user", always needs approval (pending page will handle status)
+        const needsApproval = formRole === "user" || ((userRole === "user") && !isApproved && !isStaffOrAdmin)
+        
+        console.log("needsApproval:", needsApproval, "isStaffOrAdmin:", isStaffOrAdmin, "isApproved:", isApproved)
         
         if (needsApproval) {
           // Store user data and token (token may be limited but allows status checking)
           const serverRole = userRole === "staff" ? "security" : userRole
           const allowedRoles = ["user", "security", "admin"]
           const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
-          const pendingUser = { ...rawUser, role: normalizedRole, status: "pending" }
+          const pendingUser = { ...rawUser, role: normalizedRole, status: userStatus || "pending" }
+          
+          console.log("Storing pending user:", pendingUser)
           
           // Store token and user data (token might allow status checking even if not full access)
           if (data.token) {
@@ -347,10 +367,18 @@ export default function Signup() {
             value: "Account created successfully! Redirecting to approval page..." 
           })
           
+          // Dispatch auth change event
+          window.dispatchEvent(new Event("authChange"))
+          
           // Redirect to pending page after a short delay
           setTimeout(() => {
+            console.log("Redirecting to /pending")
             navigate("/pending", { replace: true })
           }, 1500)
+          
+          // Also set loading to false since we're redirecting
+          dispatch({ type: "SET_STATUS", field: "loading", value: false })
+          return // Exit early to prevent further execution
         } else {
           // Staff/admin are auto-approved, proceed with normal login
           dispatch({ type: "SET_STATUS", field: "success", value: data.message })

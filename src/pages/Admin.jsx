@@ -100,15 +100,44 @@ export default function Admin() {
     setLoading(true)
     try {
       const token = localStorage.getItem("authToken")
-      const response = await fetch(`${BASE_URL}/api/admin/users/pending`, {
+      // Fetch all users and filter for pending, but also show recently approved/rejected
+      const response = await fetch(`${BASE_URL}/api/admin/users`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (response.ok) {
         const data = await response.json()
-        setPendingUsers(data.users || [])
+        // Get all users (not just pending) so we can show status changes
+        const allUsers = (data.users || []).filter((u) => u.role !== "admin")
+        // Show pending users first, then recently approved/rejected (within last 24 hours)
+        const now = new Date()
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+        
+        const pending = allUsers.filter(u => u.status === "pending")
+        // Show approved/rejected users that were recently updated (if updatedAt exists)
+        // Or show all approved/rejected if no updatedAt field
+        const recent = allUsers.filter(u => {
+          if (u.status === "pending") return false
+          if (u.updatedAt) {
+            return new Date(u.updatedAt) > oneDayAgo
+          }
+          // If no updatedAt, include approved/rejected users (they might have been just processed)
+          return u.status === "approved" || u.status === "rejected"
+        })
+        
+        // Combine: pending first, then recent approvals/rejections
+        setPendingUsers([...pending, ...recent])
       } else {
-        const errorData = await response.json()
-        console.error("Error fetching pending users:", errorData.message || "Failed to fetch pending users")
+        // Fallback: try the pending endpoint
+        const pendingResponse = await fetch(`${BASE_URL}/api/admin/users/pending`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (pendingResponse.ok) {
+          const pendingData = await pendingResponse.json()
+          setPendingUsers(pendingData.users || [])
+        } else {
+          const errorData = await pendingResponse.json()
+          console.error("Error fetching pending users:", errorData.message || "Failed to fetch pending users")
+        }
       }
     } catch (error) {
       console.error("Error fetching pending users:", error)
@@ -639,46 +668,67 @@ export default function Admin() {
               </div>
             ) : (
               <div className="space-y-4">
-                {pendingUsers.map((u) => (
-                  <div key={u._id || u.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-black mb-2">{u.name}</h3>
-                        <div className="space-y-1 text-sm text-gray-600">
-                          <p><strong>Email:</strong> {u.email}</p>
-                          {u.studentId && <p><strong>Student ID:</strong> {u.studentId}</p>}
-                          {u.phone && <p><strong>Phone:</strong> {u.phone}</p>}
-                          {u.createdAt && (
-                            <p><strong>Registered:</strong> {new Date(u.createdAt).toLocaleString()}</p>
-                          )}
+                {pendingUsers.map((u) => {
+                  const userStatus = u.status || "pending"
+                  const isPending = userStatus === "pending"
+                  return (
+                    <div key={u._id || u.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-semibold text-black">{u.name}</h3>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              userStatus === "approved" ? "bg-green-100 text-green-800" :
+                              userStatus === "rejected" ? "bg-red-100 text-red-800" :
+                              "bg-yellow-100 text-yellow-800"
+                            }`}>
+                              {userStatus}
+                            </span>
+                          </div>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p><strong>Email:</strong> {u.email}</p>
+                            {u.studentId && <p><strong>Student ID:</strong> {u.studentId}</p>}
+                            {u.phone && <p><strong>Phone:</strong> {u.phone}</p>}
+                            {u.createdAt && (
+                              <p><strong>Registered:</strong> {new Date(u.createdAt).toLocaleString()}</p>
+                            )}
+                            {u.updatedAt && !isPending && (
+                              <p><strong>Updated:</strong> {new Date(u.updatedAt).toLocaleString()}</p>
+                            )}
+                            {userStatus === "rejected" && u.rejectionReason && (
+                              <p className="text-red-600"><strong>Reason:</strong> {u.rejectionReason}</p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex gap-2 ml-4">
-                        <button
-                          onClick={() => handleApproveUser(u._id || u.id)}
-                          className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition flex items-center gap-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => {
-                            setUserToReject(u)
-                            setShowRejectModal(true)
-                          }}
-                          className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition flex items-center gap-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          Reject
-                        </button>
+                        {isPending && (
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => handleApproveUser(u._id || u.id)}
+                              className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => {
+                                setUserToReject(u)
+                                setShowRejectModal(true)
+                              }}
+                              className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Reject
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

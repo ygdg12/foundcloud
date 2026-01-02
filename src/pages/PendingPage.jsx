@@ -60,6 +60,7 @@ export default function PendingPage() {
     setChecking(true)
     try {
       const token = localStorage.getItem("authToken")
+      const userEmail = user.email
       
       // Try multiple endpoints to get user info
       const endpoints = [
@@ -89,6 +90,27 @@ export default function PendingPage() {
         }
       }
 
+      // If we couldn't get user info from those endpoints, try signing in again
+      // This will get the latest user status from the backend
+      if (!updatedUser && userEmail) {
+        try {
+          // Try to get user from admin endpoint (if token allows)
+          const adminResponse = await fetch(`${BASE_URL}/api/admin/users`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          if (adminResponse.ok) {
+            const adminData = await adminResponse.json()
+            const foundUser = (adminData.users || []).find(u => u.email === userEmail)
+            if (foundUser) {
+              updatedUser = foundUser
+              newStatus = foundUser.status || "pending"
+            }
+          }
+        } catch (err) {
+          console.log("Could not fetch from admin endpoint:", err)
+        }
+      }
+
       // If we got updated user info
       if (updatedUser) {
         // Update localStorage
@@ -99,10 +121,14 @@ export default function PendingPage() {
         
         localStorage.setItem("user", JSON.stringify(normalizedUser))
 
-        // If approved, redirect to home
+        // If approved, redirect to home immediately
         if (newStatus === "approved") {
+          console.log("User approved! Redirecting to dashboard...")
           window.dispatchEvent(new Event("authChange"))
-          navigate("/dashboard", { replace: true })
+          // Small delay to ensure state is updated
+          setTimeout(() => {
+            navigate("/dashboard", { replace: true })
+          }, 100)
           return
         }
 
@@ -121,13 +147,16 @@ export default function PendingPage() {
     }
   }
 
-  // Auto-check status every 10 seconds
+  // Auto-check status every 5 seconds (more frequent for faster detection)
   useEffect(() => {
     if (!user || status === "approved") return
 
+    // Check immediately on mount
+    checkStatus()
+
     const interval = setInterval(() => {
       checkStatus()
-    }, 10000) // Check every 10 seconds
+    }, 5000) // Check every 5 seconds for faster approval detection
 
     return () => clearInterval(interval)
   }, [user, status])
