@@ -280,21 +280,35 @@ export default function Signup() {
         throw new Error("Invalid role in payload")
       }
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        mode: "cors",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify(payload),
-      })
+      let response
+      try {
+        response = await fetch(endpoint, {
+          method: "POST",
+          mode: "cors",
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify(payload),
+        })
+      } catch (fetchError) {
+        // Network error or CORS error - fetch fails before getting a response
+        console.error("Fetch error (network/CORS):", fetchError)
+        if (fetchError.message && (fetchError.message.includes("Failed to fetch") || fetchError.message.includes("blocked"))) {
+          throw new Error("CORS Error: Unable to connect to the server. The backend needs to allow requests from this origin. Please contact the administrator or check backend CORS configuration.")
+        }
+        throw new Error("Network error: Unable to reach the server. Please check your connection and try again.")
+      }
 
       let data
       try {
         data = await response.json()
       } catch (parseError) {
         console.error("Failed to parse response:", parseError)
+        // If we can't parse the response, it might be a CORS error or server error
+        if (response.status === 0 || !response.ok) {
+          throw new Error("CORS Error: Unable to connect to the server. The backend needs to allow requests from this origin.")
+        }
         throw new Error(`Server error (${response.status}): Unable to parse response`)
       }
 
@@ -473,7 +487,15 @@ export default function Signup() {
       }
     } catch (err) {
       console.error("Submission error:", err)
-      const errorMessage = err.message || "An unexpected error occurred. Please check your connection and try again."
+      
+      // Detect CORS errors specifically
+      let errorMessage = "An unexpected error occurred. Please check your connection and try again."
+      if (err.message && (err.message.includes("Failed to fetch") || err.message.includes("CORS") || err.message.includes("blocked"))) {
+        errorMessage = "CORS Error: Unable to connect to the server. The backend needs to allow requests from this origin. Please contact the administrator or check backend CORS configuration."
+      } else if (err.message) {
+        errorMessage = err.message
+      }
+      
       dispatch({ type: "SET_STATUS", field: "error", value: errorMessage })
     } finally {
       dispatch({ type: "SET_STATUS", field: "loading", value: false })
@@ -832,20 +854,35 @@ export default function Signup() {
                         dispatch({ type: "SET_STATUS", field: "error", value: "" })
 
                         try {
-                          const response = await fetch(`${BASE_URL}/api/auth/signin`, {
-                            method: "POST",
-                            mode: "cors",
-                            headers: { 
-                              "Content-Type": "application/json",
-                              "Accept": "application/json"
-                            },
-                            body: JSON.stringify({ email: state.adminEmail, password: state.adminPassword }),
-                          })
+                          let response
+                          try {
+                            response = await fetch(`${BASE_URL}/api/auth/signin`, {
+                              method: "POST",
+                              mode: "cors",
+                              headers: { 
+                                "Content-Type": "application/json",
+                                "Accept": "application/json"
+                              },
+                              body: JSON.stringify({ email: state.adminEmail, password: state.adminPassword }),
+                            })
+                          } catch (fetchError) {
+                            // Network error or CORS error - fetch fails before getting a response
+                            console.error("Admin signin fetch error (network/CORS):", fetchError)
+                            if (fetchError.message && (fetchError.message.includes("Failed to fetch") || fetchError.message.includes("blocked"))) {
+                              throw new Error("CORS Error: Unable to connect to the server. The backend needs to allow requests from this origin. Please contact the administrator or check backend CORS configuration.")
+                            }
+                            throw new Error("Network error: Unable to reach the server. Please check your connection and try again.")
+                          }
 
                           let data
                           try {
                             data = await response.json()
                           } catch (parseError) {
+                            console.error("Failed to parse admin signin response:", parseError)
+                            // If we can't parse the response, it might be a CORS error or server error
+                            if (response.status === 0 || !response.ok) {
+                              throw new Error("CORS Error: Unable to connect to the server. The backend needs to allow requests from this origin.")
+                            }
                             throw new Error(`Server error (${response.status}): Unable to parse response`)
                           }
 
@@ -875,7 +912,16 @@ export default function Signup() {
                           }
                         } catch (err) {
                           console.error("Admin signin error:", err)
-                          dispatch({ type: "SET_STATUS", field: "error", value: err.message || "Network error. Please try again." })
+                          
+                          // Detect CORS errors specifically
+                          let errorMessage = "Network error. Please try again."
+                          if (err.message && (err.message.includes("Failed to fetch") || err.message.includes("CORS") || err.message.includes("blocked"))) {
+                            errorMessage = "CORS Error: The backend server needs to allow requests from this origin. Please contact the administrator or check backend CORS configuration."
+                          } else if (err.message) {
+                            errorMessage = err.message
+                          }
+                          
+                          dispatch({ type: "SET_STATUS", field: "error", value: errorMessage })
                         } finally {
                           dispatch({ type: "SET_STATUS", field: "loading", value: false })
                         }
