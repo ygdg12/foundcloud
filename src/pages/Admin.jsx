@@ -228,10 +228,39 @@ export default function Admin() {
       })
       if (response.ok) {
         const data = await response.json()
-        setGeneratedCode(data.code)
-        setShowCodeModal(true)
-        // Refresh the codes list
-        fetchVerificationCodes()
+        console.log("API Response:", data)
+        
+        // Handle different response formats
+        let codeValue = null
+        
+        // Case 1: data.code is a string (expected format: { code: "ABC12345", expiresAt: "..." })
+        if (typeof data.code === "string") {
+          codeValue = data.code
+        }
+        // Case 2: data.code is an object with a code property (nested: { code: { code: "ABC12345", ... } })
+        else if (data.code && typeof data.code === "object" && typeof data.code.code === "string") {
+          codeValue = data.code.code
+        }
+        // Case 3: The response itself is the code object (direct: { id, code: "ABC12345", ... })
+        else if (data && typeof data === "object" && typeof data.code === "string" && data.id) {
+          codeValue = data.code
+        }
+        // Case 4: Fallback - try to find code property anywhere
+        else {
+          codeValue = data?.code?.code || data?.code || null
+        }
+        
+        console.log("Extracted code value:", codeValue, "Type:", typeof codeValue)
+        
+        if (codeValue && typeof codeValue === "string") {
+          setGeneratedCode(codeValue)
+          setShowCodeModal(true)
+          // Refresh the codes list
+          fetchVerificationCodes()
+        } else {
+          console.error("Invalid code format received:", data)
+          alert(`Failed to generate verification code: Invalid response format. Received: ${JSON.stringify(data)}`)
+        }
       } else {
         const errorData = await response.json()
         alert(errorData.message || "Failed to generate verification code")
@@ -810,7 +839,7 @@ export default function Admin() {
         ) : null}
 
         {/* Generated Code Modal */}
-        {showCodeModal && generatedCode && (
+        {showCodeModal && generatedCode && (typeof generatedCode === "string" || (generatedCode && typeof generatedCode === "object" && generatedCode.code)) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
               <div className="flex justify-between items-center mb-4">
@@ -833,11 +862,12 @@ export default function Admin() {
               <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between">
                   <code className="text-2xl font-mono font-bold text-[#850303] tracking-wider">
-                    {generatedCode}
+                    {typeof generatedCode === "string" ? generatedCode : (generatedCode?.code || "Invalid code")}
                   </code>
                   <button
                     onClick={() => {
-                      copyCodeToClipboard(generatedCode)
+                      const codeToCopy = typeof generatedCode === "string" ? generatedCode : (generatedCode?.code || "")
+                      copyCodeToClipboard(codeToCopy)
                     }}
                     className="px-3 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:bg-[#700202] transition flex items-center gap-2"
                     title="Copy code"
