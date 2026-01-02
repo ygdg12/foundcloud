@@ -16,6 +16,7 @@ import {
   Loader2,
   CheckCircle,
   AlertCircle,
+  Key,
 } from "lucide-react"
 
 const BASE_URL =
@@ -46,6 +47,7 @@ const initialState = {
     studentId: "",
     phone: "",
     adminSecret: "",
+    verificationCode: "",
   },
   errors: {},
   passwordStrength: 0,
@@ -189,6 +191,13 @@ export default function Signup() {
       errors.role = VALIDATION_RULES.ROLE.message
     }
 
+    // Verification code is required for Security Officer (staff) role
+    if (state.isSignup && (state.formData.role === "security" || state.formData.role === "staff")) {
+      if (!state.formData.verificationCode || !state.formData.verificationCode.trim()) {
+        errors.verificationCode = "Verification code is required for security officer registration"
+      }
+    }
+
     if (state.isSignup && state.formData.phone && !VALIDATION_RULES.PHONE.pattern.test(state.formData.phone)) {
       errors.phone = VALIDATION_RULES.PHONE.message
     }
@@ -235,15 +244,18 @@ export default function Signup() {
     try {
       const endpoint = state.isSignup ? `${BASE_URL}/api/auth/signup` : `${BASE_URL}/api/auth/signin`
       const formData = new FormData(e.target)
+      const userRole = (state.formData.role || formData.get("role")) === "security" ? "staff" : (state.formData.role || formData.get("role"))
       const payload = state.isSignup
         ? {
             name: state.formData.name,
             email: state.formData.email,
             password: state.formData.password,
             // Map UI role "security" to backend-expected "staff"
-            role: (state.formData.role || formData.get("role")) === "security" ? "staff" : (state.formData.role || formData.get("role")),
+            role: userRole,
             studentId: state.formData.studentId || undefined,
             phone: state.formData.phone || undefined,
+            // Include verification code only for staff role
+            ...(userRole === "staff" && state.formData.verificationCode ? { verificationCode: state.formData.verificationCode.trim() } : {}),
           }
         : {
             email: state.formData.email,
@@ -275,7 +287,24 @@ export default function Signup() {
       console.log("Response data:", data, "Status:", response.status)
 
       if (!response.ok) {
-        const errorMessage = data?.message || data?.error || `Authentication failed (${response.status})`
+        let errorMessage = data?.message || data?.error || `Authentication failed (${response.status})`
+        
+        // Handle specific verification code errors
+        if (response.status === 400 || response.status === 403) {
+          const lowerMessage = errorMessage.toLowerCase()
+          if (lowerMessage.includes("verification code") || lowerMessage.includes("verification")) {
+            if (lowerMessage.includes("required")) {
+              errorMessage = "Verification code is required for security officer registration"
+            } else if (lowerMessage.includes("invalid") || lowerMessage.includes("not found")) {
+              errorMessage = "Invalid verification code"
+            } else if (lowerMessage.includes("used") || lowerMessage.includes("already")) {
+              errorMessage = "Verification code has already been used"
+            } else if (lowerMessage.includes("expired") || lowerMessage.includes("expir")) {
+              errorMessage = "Verification code has expired"
+            }
+          }
+        }
+        
         console.error("API error:", errorMessage, data)
         throw new Error(errorMessage)
       }
@@ -489,7 +518,13 @@ export default function Signup() {
                     <select
                       name="role"
                       value={state.formData.role}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        handleInputChange(e)
+                        // Clear verification code when role changes
+                        if (e.target.value !== "security") {
+                          dispatch({ type: "UPDATE_FIELD", field: "verificationCode", value: "" })
+                        }
+                      }}
                       className="w-full pl-12 pr-4 py-3 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-200 appearance-none text-sm"
                       aria-label="User Role"
                     >
@@ -504,6 +539,20 @@ export default function Signup() {
                     </p>
                   )}
                 </div>
+              )}
+
+              {/* Verification Code Field - Only shown for Security Officer role */}
+              {state.isSignup && (state.formData.role === "security" || state.formData.role === "staff") && (
+                <InputField
+                  icon={Key}
+                  type="text"
+                  name="verificationCode"
+                  value={state.formData.verificationCode}
+                  onChange={handleInputChange}
+                  placeholder="Verification Code (Required)"
+                  error={state.errors.verificationCode}
+                  ariaLabel="Verification Code"
+                />
               )}
 
               {state.isSignup && (

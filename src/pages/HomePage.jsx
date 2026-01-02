@@ -220,7 +220,7 @@ export default function HomePage() {
       {/* Header */}
       <header
         className={`fixed w-full top-0 z-50 transition-all duration-500 ${
-          scrolled
+          scrolled 
             ? "bg-red-950/30 shadow-lg backdrop-blur-xl border-b border-red-800/60"
             : "bg-gradient-to-r from-red-950/90 via-red-900/90 to-red-950/90 shadow-md backdrop-blur-md border-b border-red-800/60"
         }`}
@@ -311,10 +311,10 @@ export default function HomePage() {
                 Logout
               </button>
               <button className="text-white hover:bg-white/10 p-2 rounded-lg transition-all duration-200 active:scale-95">
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16m-7 6h7" />
-                </svg>
-              </button>
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16m-7 6h7" />
+              </svg>
+            </button>
             </div>
           </nav>
         </div>

@@ -12,14 +12,19 @@ const BASE_URL =
 
 export default function Admin() {
   const [user, setUser] = useState(null)
-  const [view, setView] = useState("dashboard") // dashboard, users, foundItems, lostItems, claims
+  const [view, setView] = useState("dashboard") // dashboard, users, foundItems, lostItems, claims, verificationCodes
   const [users, setUsers] = useState([])
   const [foundItems, setFoundItems] = useState([])
   const [lostItems, setLostItems] = useState([])
   const [claims, setClaims] = useState([])
+  const [verificationCodes, setVerificationCodes] = useState([])
   const [loading, setLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [userToDelete, setUserToDelete] = useState(null)
+  const [showCodeModal, setShowCodeModal] = useState(false)
+  const [generatedCode, setGeneratedCode] = useState(null)
+  const [codeToDelete, setCodeToDelete] = useState(null)
+  const [showDeleteCodeModal, setShowDeleteCodeModal] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -49,6 +54,8 @@ export default function Admin() {
       fetchLostItems()
     } else if (view === "claims") {
       fetchClaims()
+    } else if (view === "verificationCodes") {
+      fetchVerificationCodes()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]) // fetchClaims, fetchFoundItems, fetchLostItems, fetchUsers are stable functions
@@ -186,6 +193,96 @@ export default function Admin() {
   const handleDeleteCancel = () => {
     setShowDeleteModal(false)
     setUserToDelete(null)
+  }
+
+  const fetchVerificationCodes = async () => {
+    setLoading(true)
+    try {
+      const token = localStorage.getItem("authToken")
+      const response = await fetch(`${BASE_URL}/api/admin/verification-codes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setVerificationCodes(data.codes || [])
+      } else {
+        const errorData = await response.json()
+        console.error("Error fetching verification codes:", errorData.message || "Failed to fetch codes")
+      }
+    } catch (error) {
+      console.error("Error fetching verification codes:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const generateVerificationCode = async () => {
+    try {
+      const token = localStorage.getItem("authToken")
+      const response = await fetch(`${BASE_URL}/api/admin/verification-codes`, {
+        method: "POST",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setGeneratedCode(data.code)
+        setShowCodeModal(true)
+        // Refresh the codes list
+        fetchVerificationCodes()
+      } else {
+        const errorData = await response.json()
+        alert(errorData.message || "Failed to generate verification code")
+      }
+    } catch (error) {
+      console.error("Error generating verification code:", error)
+      alert("Error generating verification code")
+    }
+  }
+
+  const handleDeleteCodeClick = (code) => {
+    setCodeToDelete(code)
+    setShowDeleteCodeModal(true)
+  }
+
+  const handleDeleteCodeConfirm = async () => {
+    if (!codeToDelete) return
+
+    try {
+      const token = localStorage.getItem("authToken")
+      const codeId = codeToDelete._id || codeToDelete.id
+      const response = await fetch(`${BASE_URL}/api/admin/verification-codes/${codeId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (response.ok) {
+        setVerificationCodes(verificationCodes.filter((c) => (c._id || c.id) !== codeId))
+        setShowDeleteCodeModal(false)
+        setCodeToDelete(null)
+      } else {
+        const data = await response.json()
+        alert(data.message || "Failed to delete verification code")
+        setShowDeleteCodeModal(false)
+        setCodeToDelete(null)
+      }
+    } catch (error) {
+      console.error("Error deleting verification code:", error)
+      alert("Error deleting verification code")
+      setShowDeleteCodeModal(false)
+      setCodeToDelete(null)
+    }
+  }
+
+  const handleDeleteCodeCancel = () => {
+    setShowDeleteCodeModal(false)
+    setCodeToDelete(null)
+  }
+
+  const copyCodeToClipboard = (code) => {
+    navigator.clipboard.writeText(code)
+    alert("Code copied to clipboard!")
   }
 
   const handleLogout = () => {
@@ -360,6 +457,17 @@ export default function Admin() {
                   className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
                 >
                   View Claims
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6 hover:shadow-xl transition-shadow">
+                <h2 className="text-xl font-semibold text-black mb-2">Verification Codes</h2>
+                <p className="text-gray-600 mb-4">Generate and manage verification codes for security officer registration.</p>
+                <button 
+                  onClick={() => setView("verificationCodes")}
+                  className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
+                >
+                  Manage Codes
                 </button>
               </div>
             </div>
@@ -595,7 +703,171 @@ export default function Admin() {
               </div>
             )}
           </div>
+        ) : view === "verificationCodes" ? (
+          <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-black">Verification Codes</h2>
+              <button
+                onClick={generateVerificationCode}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#850303] to-[#700202] text-white text-sm font-semibold hover:from-[#700202] hover:to-[#5a0101] transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Generate Code
+              </button>
+            </div>
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading verification codes...</p>
+              </div>
+            ) : verificationCodes.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600 mb-4">No verification codes found</p>
+                <button
+                  onClick={generateVerificationCode}
+                  className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
+                >
+                  Generate First Code
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Code</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Used By</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Expires At</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {verificationCodes.map((code) => {
+                      const isExpired = new Date(code.expiresAt) < new Date()
+                      const isUsed = code.isUsed || false
+                      return (
+                        <tr key={code._id || code.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <code className="px-3 py-1 bg-gray-100 rounded text-sm font-mono text-gray-800">
+                                {code.code}
+                              </code>
+                              <button
+                                onClick={() => copyCodeToClipboard(code.code)}
+                                className="text-gray-500 hover:text-gray-700 transition-colors"
+                                title="Copy code"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              isUsed ? "bg-green-100 text-green-800" :
+                              isExpired ? "bg-red-100 text-red-800" :
+                              "bg-blue-100 text-blue-800"
+                            }`}>
+                              {isUsed ? "Used" : isExpired ? "Expired" : "Active"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            {code.usedBy ? (
+                              typeof code.usedBy === "object" ? (
+                                <span>{code.usedBy.name || code.usedBy.email || "N/A"}</span>
+                              ) : (
+                                <span>{code.usedBy}</span>
+                              )
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={isExpired ? "text-red-600" : ""}>
+                              {new Date(code.expiresAt).toLocaleString()}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={() => handleDeleteCodeClick(code)}
+                              className="px-3 py-1 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         ) : null}
+
+        {/* Generated Code Modal */}
+        {showCodeModal && generatedCode && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-black">Verification Code Generated</h3>
+                <button
+                  onClick={() => {
+                    setShowCodeModal(false)
+                    setGeneratedCode(null)
+                  }}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-gray-600 mb-4">
+                A new verification code has been generated. Share this code with the security officer who needs to register.
+              </p>
+              <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <code className="text-2xl font-mono font-bold text-[#850303] tracking-wider">
+                    {generatedCode}
+                  </code>
+                  <button
+                    onClick={() => {
+                      copyCodeToClipboard(generatedCode)
+                    }}
+                    className="px-3 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:bg-[#700202] transition flex items-center gap-2"
+                    title="Copy code"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Copy
+                  </button>
+                </div>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note:</strong> This code will expire in 7 days and can only be used once.
+                </p>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowCodeModal(false)
+                    setGeneratedCode(null)
+                  }}
+                  className="px-4 py-2 rounded-lg bg-[#850303] text-white font-medium hover:bg-[#700202] transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Delete Confirmation Modal */}
         {showDeleteModal && userToDelete && (
@@ -614,6 +886,32 @@ export default function Admin() {
                 </button>
                 <button
                   onClick={handleDeleteConfirm}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Code Confirmation Modal */}
+        {showDeleteCodeModal && codeToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <h3 className="text-xl font-bold text-black mb-4">Confirm Delete Verification Code</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete verification code <strong><code>{codeToDelete.code}</code></strong>? This action cannot be undone.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleDeleteCodeCancel}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteCodeConfirm}
                   className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition"
                 >
                   Delete
