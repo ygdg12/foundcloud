@@ -12,8 +12,9 @@ const BASE_URL =
 
 export default function Admin() {
   const [user, setUser] = useState(null)
-  const [view, setView] = useState("dashboard") // dashboard, users, foundItems, lostItems, claims, verificationCodes
+  const [view, setView] = useState("dashboard") // dashboard, users, foundItems, lostItems, claims, verificationCodes, pendingUsers
   const [users, setUsers] = useState([])
+  const [pendingUsers, setPendingUsers] = useState([])
   const [foundItems, setFoundItems] = useState([])
   const [lostItems, setLostItems] = useState([])
   const [claims, setClaims] = useState([])
@@ -25,6 +26,10 @@ export default function Admin() {
   const [generatedCode, setGeneratedCode] = useState(null)
   const [codeToDelete, setCodeToDelete] = useState(null)
   const [showDeleteCodeModal, setShowDeleteCodeModal] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [userToReject, setUserToReject] = useState(null)
+  const [rejectReason, setRejectReason] = useState("")
+  const [userStatusFilter, setUserStatusFilter] = useState("all") // all, pending, approved, rejected
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -46,6 +51,7 @@ export default function Admin() {
       fetchClaims()
       fetchFoundItems()
       fetchLostItems()
+      fetchPendingUsers() // Also fetch pending users count for dashboard
     } else if (view === "users") {
       fetchUsers()
     } else if (view === "foundItems") {
@@ -56,6 +62,8 @@ export default function Admin() {
       fetchClaims()
     } else if (view === "verificationCodes") {
       fetchVerificationCodes()
+    } else if (view === "pendingUsers") {
+      fetchPendingUsers()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]) // fetchClaims, fetchFoundItems, fetchLostItems, fetchUsers are stable functions
@@ -67,7 +75,10 @@ export default function Admin() {
     }
     try {
       const token = localStorage.getItem("authToken")
-      const response = await fetch(`${BASE_URL}/api/admin/users`, {
+      const url = userStatusFilter !== "all" 
+        ? `${BASE_URL}/api/admin/users?status=${userStatusFilter}`
+        : `${BASE_URL}/api/admin/users`
+      const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (response.ok) {
@@ -82,6 +93,90 @@ export default function Admin() {
       if (view !== "dashboard") {
         setLoading(false)
       }
+    }
+  }
+
+  const fetchPendingUsers = async () => {
+    setLoading(true)
+    try {
+      const token = localStorage.getItem("authToken")
+      const response = await fetch(`${BASE_URL}/api/admin/users/pending`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setPendingUsers(data.users || [])
+      } else {
+        const errorData = await response.json()
+        console.error("Error fetching pending users:", errorData.message || "Failed to fetch pending users")
+      }
+    } catch (error) {
+      console.error("Error fetching pending users:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleApproveUser = async (userId) => {
+    try {
+      const token = localStorage.getItem("authToken")
+      const response = await fetch(`${BASE_URL}/api/admin/users/${userId}/approve`, {
+        method: "PATCH",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+      })
+      if (response.ok) {
+        // Refresh pending users list
+        fetchPendingUsers()
+        // Refresh users list if on users view
+        if (view === "users") {
+          fetchUsers()
+        }
+        alert("User approved successfully")
+      } else {
+        const errorData = await response.json()
+        alert(errorData.message || "Failed to approve user")
+      }
+    } catch (error) {
+      console.error("Error approving user:", error)
+      alert("Error approving user")
+    }
+  }
+
+  const handleRejectUser = async () => {
+    if (!userToReject) return
+
+    try {
+      const token = localStorage.getItem("authToken")
+      const userId = userToReject._id || userToReject.id
+      const response = await fetch(`${BASE_URL}/api/admin/users/${userId}/reject`, {
+        method: "PATCH",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ reason: rejectReason || undefined }),
+      })
+      if (response.ok) {
+        // Refresh pending users list
+        fetchPendingUsers()
+        // Refresh users list if on users view
+        if (view === "users") {
+          fetchUsers()
+        }
+        setShowRejectModal(false)
+        setUserToReject(null)
+        setRejectReason("")
+        alert("User rejected successfully")
+      } else {
+        const errorData = await response.json()
+        alert(errorData.message || "Failed to reject user")
+      }
+    } catch (error) {
+      console.error("Error rejecting user:", error)
+      alert("Error rejecting user")
     }
   }
 
@@ -384,7 +479,7 @@ export default function Admin() {
         {view === "dashboard" ? (
           <>
             {/* Stats Cards */}
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-8">
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-5 mb-8">
               <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -394,6 +489,20 @@ export default function Admin() {
                   <div className="p-3 bg-red-100 rounded-lg">
                     <svg className="w-8 h-8 text-[#850303]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">Pending Users</p>
+                    <p className="text-3xl font-bold text-yellow-600">{pendingUsers.length}</p>
+                  </div>
+                  <div className="p-3 bg-yellow-100 rounded-lg">
+                    <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                 </div>
@@ -499,11 +608,139 @@ export default function Admin() {
                   Manage Codes
                 </button>
               </div>
+
+              <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6 hover:shadow-xl transition-shadow">
+                <h2 className="text-xl font-semibold text-black mb-2">Pending Users</h2>
+                <p className="text-gray-600 mb-4">Review and approve or reject user registration requests.</p>
+                <button 
+                  onClick={() => {
+                    setView("pendingUsers")
+                    fetchPendingUsers()
+                  }}
+                  className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
+                >
+                  Review Pending Users
+                </button>
+              </div>
             </div>
           </>
+        ) : view === "pendingUsers" ? (
+          <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
+            <h2 className="text-2xl font-bold text-black mb-6">Pending User Approvals</h2>
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading pending users...</p>
+              </div>
+            ) : pendingUsers.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600 mb-4">No pending users found</p>
+                <p className="text-sm text-gray-500">All user registrations have been reviewed.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingUsers.map((u) => (
+                  <div key={u._id || u.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-black mb-2">{u.name}</h3>
+                        <div className="space-y-1 text-sm text-gray-600">
+                          <p><strong>Email:</strong> {u.email}</p>
+                          {u.studentId && <p><strong>Student ID:</strong> {u.studentId}</p>}
+                          {u.phone && <p><strong>Phone:</strong> {u.phone}</p>}
+                          {u.createdAt && (
+                            <p><strong>Registered:</strong> {new Date(u.createdAt).toLocaleString()}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => handleApproveUser(u._id || u.id)}
+                          className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => {
+                            setUserToReject(u)
+                            setShowRejectModal(true)
+                          }}
+                          className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         ) : view === "users" ? (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-            <h2 className="text-2xl font-bold text-black mb-6">Users Management</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-black">Users Management</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setUserStatusFilter("all")
+                    fetchUsers()
+                  }}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                    userStatusFilter === "all"
+                      ? "bg-[#850303] text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => {
+                    setUserStatusFilter("pending")
+                    fetchUsers()
+                  }}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                    userStatusFilter === "pending"
+                      ? "bg-[#850303] text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  Pending
+                </button>
+                <button
+                  onClick={() => {
+                    setUserStatusFilter("approved")
+                    fetchUsers()
+                  }}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                    userStatusFilter === "approved"
+                      ? "bg-[#850303] text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  Approved
+                </button>
+                <button
+                  onClick={() => {
+                    setUserStatusFilter("rejected")
+                    fetchUsers()
+                  }}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                    userStatusFilter === "rejected"
+                      ? "bg-[#850303] text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  Rejected
+                </button>
+              </div>
+            </div>
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
@@ -520,34 +757,72 @@ export default function Admin() {
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Student ID</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Role</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((u) => (
-                      <tr key={u._id || u.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4">{u.name}</td>
-                        <td className="py-3 px-4">{u.email}</td>
-                        <td className="py-3 px-4">{u.studentId || "N/A"}</td>
-                        <td className="py-3 px-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            u.role === "admin" ? "bg-red-100 text-red-800" :
-                            u.role === "staff" ? "bg-green-100 text-green-800" :
-                            "bg-blue-100 text-blue-800"
-                          }`}>
-                            {u.role}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <button
-                            onClick={() => handleDeleteClick(u)}
-                            className="px-3 py-1 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {users.map((u) => {
+                      const userStatus = u.status || (u.role === "admin" || u.role === "staff" ? "approved" : "pending")
+                      return (
+                        <tr key={u._id || u.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">{u.name}</td>
+                          <td className="py-3 px-4">{u.email}</td>
+                          <td className="py-3 px-4">{u.studentId || "N/A"}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              u.role === "admin" ? "bg-red-100 text-red-800" :
+                              u.role === "staff" ? "bg-green-100 text-green-800" :
+                              "bg-blue-100 text-blue-800"
+                            }`}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              userStatus === "approved" ? "bg-green-100 text-green-800" :
+                              userStatus === "pending" ? "bg-yellow-100 text-yellow-800" :
+                              userStatus === "rejected" ? "bg-red-100 text-red-800" :
+                              "bg-gray-100 text-gray-800"
+                            }`}>
+                              {userStatus}
+                            </span>
+                            {userStatus === "rejected" && u.rejectionReason && (
+                              <p className="text-xs text-gray-500 mt-1">Reason: {u.rejectionReason}</p>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex gap-2">
+                              {userStatus === "pending" && (
+                                <>
+                                  <button
+                                    onClick={() => handleApproveUser(u._id || u.id)}
+                                    className="px-3 py-1 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setUserToReject(u)
+                                      setShowRejectModal(true)
+                                    }}
+                                    className="px-3 py-1 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                              <button
+                                onClick={() => handleDeleteClick(u)}
+                                className="px-3 py-1 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -945,6 +1220,62 @@ export default function Admin() {
                   className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition"
                 >
                   Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reject User Modal */}
+        {showRejectModal && userToReject && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-black">Reject User</h3>
+                <button
+                  onClick={() => {
+                    setShowRejectModal(false)
+                    setUserToReject(null)
+                    setRejectReason("")
+                  }}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-gray-600 mb-4">
+                Are you sure you want to reject <strong>{userToReject.name}</strong> ({userToReject.email})? This action cannot be undone.
+              </p>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rejection Reason (Optional)
+                </label>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Enter reason for rejection..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowRejectModal(false)
+                    setUserToReject(null)
+                    setRejectReason("")
+                  }}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRejectUser}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition"
+                >
+                  Reject User
                 </button>
               </div>
             </div>

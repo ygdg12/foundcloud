@@ -1,7 +1,7 @@
 "use client"
 
 import { useReducer, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import {
   Eye,
   EyeOff,
@@ -144,6 +144,16 @@ const InputField = ({
 export default function Signup() {
   const [state, dispatch] = useReducer(reducer, initialState)
   const navigate = useNavigate()
+  const location = useLocation()
+  
+  // Check for info message from navigation state
+  useEffect(() => {
+    if (location.state?.infoMessage) {
+      dispatch({ type: "SET_STATUS", field: "error", value: location.state.infoMessage })
+      // Clear the state to prevent showing message again on refresh
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
 
   // Password strength calculation
   const calculatePasswordStrength = (password) => {
@@ -309,32 +319,113 @@ export default function Signup() {
         throw new Error(errorMessage)
       }
 
-      dispatch({ type: "SET_STATUS", field: "success", value: data.message })
+      // Handle signup response
+      if (state.isSignup) {
+        const rawUser = data.user || {}
+        const userStatus = rawUser.status || "pending"
+        const userRole = rawUser.role || "user"
+        
+        // Staff and admin are auto-approved, regular users need approval
+        const needsApproval = userRole === "user" && userStatus === "pending"
+        
+        if (needsApproval) {
+          // Don't auto-login pending users
+          dispatch({ 
+            type: "SET_STATUS", 
+            field: "success", 
+            value: "Account created successfully! Please wait for admin approval before signing in." 
+          })
+          
+          // Clear form and redirect to signin after a delay
+          setTimeout(() => {
+            dispatch({ type: "TOGGLE_AUTH_MODE" }) // Switch to signin mode
+            dispatch({ type: "RESET" })
+            // Show info message on signin page
+            const infoMessage = "Your account is pending approval. Please wait for admin approval."
+            navigate("/signin", { 
+              replace: true,
+              state: { infoMessage }
+            })
+          }, 2000)
+        } else {
+          // Staff/admin are auto-approved, proceed with normal login
+          dispatch({ type: "SET_STATUS", field: "success", value: data.message })
+          
+          // Normalize user and role from response
+          const serverRole = userRole === "staff" ? "security" : userRole
+          const allowedRoles = ["user", "security", "admin"]
+          const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
+          const user = { ...rawUser, role: normalizedRole }
 
-      // Normalize user and role from response
-      const rawUser = data.user || {}
-      // Map server "staff" to UI role "security"
-      const serverRole = rawUser.role === "staff" ? "security" : rawUser.role
-      const allowedRoles = ["user", "security", "admin"]
-      const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
-      const user = { ...rawUser, role: normalizedRole }
+          // Update localStorage
+          localStorage.setItem("authToken", data.token)
+          localStorage.setItem("user", JSON.stringify(user))
 
-      // Update localStorage
-      localStorage.setItem("authToken", data.token)
-      localStorage.setItem("user", JSON.stringify(user))
+          // Dispatch custom event to notify AuthContext
+          window.dispatchEvent(new Event("authChange"))
 
-      // Dispatch custom event to notify AuthContext
-      window.dispatchEvent(new Event("authChange"))
+          // Wait for AuthContext to update
+          setTimeout(() => {
+            console.log("Navigating post-auth, localStorage:", {
+              authToken: localStorage.getItem("authToken"),
+              user: localStorage.getItem("user"),
+            })
+            const destination = user.role === "security" ? "/security" : "/dashboard"
+            navigate(destination, { replace: true })
+          }, 200)
+        }
+      } else {
+        // Handle signin response
+        // Check for pending/rejected status (could be in data.status or data.user.status)
+        const userStatus = data.status || data.user?.status
+        const rejectionReason = data.reason || data.user?.rejectionReason
+        
+        if (userStatus === "pending") {
+          dispatch({ 
+            type: "SET_STATUS", 
+            field: "error", 
+            value: "Your account is pending approval. Please wait for admin approval." 
+          })
+          return
+        }
+        
+        if (userStatus === "rejected") {
+          const reasonText = rejectionReason ? ` Reason: ${rejectionReason}` : ""
+          dispatch({ 
+            type: "SET_STATUS", 
+            field: "error", 
+            value: `Your account has been rejected. Please contact support.${reasonText}` 
+          })
+          return
+        }
+        
+        // Approved user - proceed with normal signin
+        dispatch({ type: "SET_STATUS", field: "success", value: data.message || "Sign in successful" })
 
-      // Wait for AuthContext to update
-      setTimeout(() => {
-        console.log("Navigating post-auth, localStorage:", {
-          authToken: localStorage.getItem("authToken"),
-          user: localStorage.getItem("user"),
-        })
-        const destination = user.role === "security" ? "/security" : "/dashboard"
-        navigate(destination, { replace: true })
-      }, 200)
+        // Normalize user and role from response
+        const rawUser = data.user || {}
+        const serverRole = rawUser.role === "staff" ? "security" : rawUser.role
+        const allowedRoles = ["user", "security", "admin"]
+        const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
+        const user = { ...rawUser, role: normalizedRole }
+
+        // Update localStorage
+        localStorage.setItem("authToken", data.token)
+        localStorage.setItem("user", JSON.stringify(user))
+
+        // Dispatch custom event to notify AuthContext
+        window.dispatchEvent(new Event("authChange"))
+
+        // Wait for AuthContext to update
+        setTimeout(() => {
+          console.log("Navigating post-auth, localStorage:", {
+            authToken: localStorage.getItem("authToken"),
+            user: localStorage.getItem("user"),
+          })
+          const destination = user.role === "security" ? "/security" : "/dashboard"
+          navigate(destination, { replace: true })
+        }, 200)
+      }
     } catch (err) {
       console.error("Submission error:", err)
       const errorMessage = err.message || "An unexpected error occurred. Please check your connection and try again."
