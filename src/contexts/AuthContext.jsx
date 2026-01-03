@@ -27,8 +27,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Validate token expiration first
+    let decoded;
     try {
-      const decoded = jwtDecode(token);
+      decoded = jwtDecode(token);
       console.log("checkAuth: Decoded token:", decoded);
       if (decoded.exp * 1000 <= Date.now()) {
         console.log("checkAuth: Token expired, clearing localStorage");
@@ -47,6 +48,32 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       setLoading(false);
       return;
+    }
+
+    // CRITICAL: Verify token user ID matches cached user ID (if cached user exists)
+    // This prevents using stale user data from a different user's token
+    if (userData) {
+      try {
+        const cachedUser = JSON.parse(userData);
+        const tokenUserId = decoded.userId || decoded.id || decoded._id || decoded.sub;
+        const cachedUserId = cachedUser._id || cachedUser.id;
+        
+        // If user IDs don't match, clear localStorage - token and user don't belong together
+        if (tokenUserId && cachedUserId && tokenUserId.toString() !== cachedUserId.toString()) {
+          console.error("checkAuth: Token user ID doesn't match cached user ID. Clearing localStorage.", {
+            tokenUserId,
+            cachedUserId
+          });
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("user");
+          setUser(null);
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.warn("checkAuth: Could not verify token-user match:", error);
+      }
     }
 
     // CRITICAL: Fetch fresh user data from /api/auth/me to ensure we have the correct user
@@ -68,6 +95,23 @@ export const AuthProvider = ({ children }) => {
           // Handle both { user: {...} } and direct user object responses
           const fetchedUser = data.user || data;
           
+          // CRITICAL: Verify the fetched user ID matches the token user ID
+          const tokenUserId = decoded.userId || decoded.id || decoded._id || decoded.sub;
+          const fetchedUserId = fetchedUser._id || fetchedUser.id;
+          
+          if (tokenUserId && fetchedUserId && tokenUserId.toString() !== fetchedUserId.toString()) {
+            console.error("checkAuth: Token user ID doesn't match API response user ID!", {
+              tokenUserId,
+              fetchedUserId
+            });
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("user");
+            setUser(null);
+            setIsAuthenticated(false);
+            setLoading(false);
+            return;
+          }
+          
           // Normalize role (staff -> security)
           const serverRole = fetchedUser.role === "staff" ? "security" : fetchedUser.role;
           const allowedRoles = ["user", "security", "admin"];
@@ -83,12 +127,26 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
           return;
         } else {
-          console.warn("checkAuth: Failed to fetch from /api/auth/me, using cached data");
-          // Fall through to use cached data
+          // If API fails, don't use cached data - clear it to prevent wrong user access
+          console.error("checkAuth: Failed to fetch from /api/auth/me. Status:", response.status);
+          console.error("checkAuth: This might be a CORS issue or backend problem. Clearing localStorage for security.");
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("user");
+          setUser(null);
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
         }
       } catch (apiError) {
-        console.warn("checkAuth: Error fetching from /api/auth/me:", apiError);
-        // Fall through to use cached data
+        // If API call fails (network error, CORS, etc.), don't use cached data
+        console.error("checkAuth: Error fetching from /api/auth/me:", apiError);
+        console.error("checkAuth: This might be a CORS issue. Clearing localStorage for security.");
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("user");
+        setUser(null);
+        setIsAuthenticated(false);
+        setLoading(false);
+        return;
       }
     }
 
