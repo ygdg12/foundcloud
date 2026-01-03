@@ -2,6 +2,7 @@
 
 import { useReducer, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
+import { getUserRedirectPath, shouldShowPendingPage } from "../utils/userRedirect"
 import {
   Eye,
   EyeOff,
@@ -351,32 +352,32 @@ export default function Signup() {
         console.log("Signup response - userRole:", userRole, "userStatus:", userStatus, "rawUser:", rawUser)
         console.log("Signup response - payload.role:", payload.role, "formRole:", formRole)
         
-        // Staff and admin are auto-approved, regular users need approval
-        // Check if user needs approval: role is "user" and status is not "approved"
-        const isStaffOrAdmin = userRole === "admin" || userRole === "staff" || userRole === "security" || 
-                               formRole === "admin" || formRole === "staff" || formRole === "security"
-        const isApproved = userStatus === "approved"
+        // Normalize user and role from response
+        const serverRole = userRole === "staff" ? "security" : userRole
+        const allowedRoles = ["user", "security", "admin"]
+        const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
+        const normalizedUser = { ...rawUser, role: normalizedRole, status: userStatus }
         
-        // IMPORTANT: Only regular users (role === "user") need approval
-        // Staff and admin should NEVER be redirected to pending page
-        const needsApproval = !isStaffOrAdmin && (formRole === "user" || userRole === "user") && !isApproved
+        // CRITICAL: Check if user should see pending page
+        // ONLY regular users (role: "user") with status "pending" should see pending page
+        const shouldShowPending = shouldShowPendingPage(normalizedUser)
         
-        console.log("Approval check - isStaffOrAdmin:", isStaffOrAdmin, "needsApproval:", needsApproval, "formRole:", formRole, "userRole:", userRole)
+        console.log("Signup - User check:", {
+          normalizedRole,
+          userStatus,
+          shouldShowPending,
+          normalizedUser
+        })
         
-        if (needsApproval) {
-          // Store user data and token (token may be limited but allows status checking)
-          const serverRole = userRole === "staff" ? "security" : userRole
-          const allowedRoles = ["user", "security", "admin"]
-          const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
-          const pendingUser = { ...rawUser, role: normalizedRole, status: userStatus || "pending" }
+        if (shouldShowPending) {
+          // Regular user with pending status - redirect to pending page
+          console.log("Signup: Regular user with pending status, redirecting to pending page")
           
-          console.log("Storing pending user:", pendingUser)
-          
-          // Store token and user data (token might allow status checking even if not full access)
+          // Store token and user data
           if (data.token) {
             localStorage.setItem("authToken", data.token)
           }
-          localStorage.setItem("user", JSON.stringify(pendingUser))
+          localStorage.setItem("user", JSON.stringify(normalizedUser))
           
           dispatch({ 
             type: "SET_STATUS", 
@@ -387,66 +388,47 @@ export default function Signup() {
           // Dispatch auth change event
           window.dispatchEvent(new Event("authChange"))
           
-          // Redirect to pending page after a short delay
+          // Redirect to pending page
           setTimeout(() => {
-            console.log("Redirecting to /pending")
             navigate("/pending", { replace: true })
           }, 1500)
           
-          // Also set loading to false since we're redirecting
           dispatch({ type: "SET_STATUS", field: "loading", value: false })
-          return // Exit early to prevent further execution
+          return
         } else {
-          // Staff/admin are auto-approved, proceed with normal login
-          dispatch({ type: "SET_STATUS", field: "success", value: data.message })
+          // All other users (staff/admin/approved users) - proceed with normal login
+          console.log("Signup: User is not pending, redirecting to appropriate dashboard")
           
-          // Normalize user and role from response
-          const serverRole = userRole === "staff" ? "security" : userRole
-          const allowedRoles = ["user", "security", "admin"]
-          const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
-          const user = { ...rawUser, role: normalizedRole }
+          dispatch({ type: "SET_STATUS", field: "success", value: data.message || "Account created successfully!" })
 
           // Update localStorage
           localStorage.setItem("authToken", data.token)
-          localStorage.setItem("user", JSON.stringify(user))
+          localStorage.setItem("user", JSON.stringify(normalizedUser))
 
           // Dispatch custom event to notify AuthContext
           window.dispatchEvent(new Event("authChange"))
 
-          // Wait for AuthContext to update
+          // Get redirect path based on user role and status
+          const redirectPath = getUserRedirectPath(normalizedUser)
+          
           setTimeout(() => {
-            console.log("Navigating post-auth, localStorage:", {
-              authToken: localStorage.getItem("authToken"),
-              user: localStorage.getItem("user"),
-            })
-            // Redirect based on role: admin -> /admin, security -> /security, user -> /dashboard
-            const destination = user.role === "admin" ? "/admin" : user.role === "security" ? "/security" : "/dashboard"
-            navigate(destination, { replace: true })
+            console.log("Signup: Redirecting to:", redirectPath)
+            navigate(redirectPath, { replace: true })
           }, 200)
         }
       } else {
         // Handle signin response
-        // Check for pending/rejected status (could be in data.status or data.user.status)
-        const userStatus = data.status || data.user?.status
-        const rejectionReason = data.reason || data.user?.rejectionReason
+        const rawUser = data.user || {}
+        const userStatus = data.status || rawUser.status || "pending"
+        const rejectionReason = data.reason || rawUser.rejectionReason
         
-        if (userStatus === "pending") {
-          // Store user data and redirect to pending page
-          const serverRole = rawUser.role === "staff" ? "security" : rawUser.role
-          const allowedRoles = ["user", "security", "admin"]
-          const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
-          const pendingUser = { ...rawUser, role: normalizedRole, status: "pending" }
-          
-          localStorage.setItem("user", JSON.stringify(pendingUser))
-          if (data.token) {
-            localStorage.setItem("authToken", data.token)
-          }
-          
-          // Redirect to pending page
-          navigate("/pending", { replace: true })
-          return
-        }
+        // Normalize user and role from response
+        const serverRole = rawUser.role === "staff" ? "security" : rawUser.role
+        const allowedRoles = ["user", "security", "admin"]
+        const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
+        const normalizedUser = { ...rawUser, role: normalizedRole, status: userStatus }
         
+        // Handle rejected users
         if (userStatus === "rejected") {
           const reasonText = rejectionReason ? ` Reason: ${rejectionReason}` : ""
           dispatch({ 
@@ -457,32 +439,29 @@ export default function Signup() {
           return
         }
         
-        // Approved user - proceed with normal signin
-        dispatch({ type: "SET_STATUS", field: "success", value: data.message || "Sign in successful" })
-
-        // Normalize user and role from response
-        const rawUser = data.user || {}
-        const serverRole = rawUser.role === "staff" ? "security" : rawUser.role
-        const allowedRoles = ["user", "security", "admin"]
-        const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
-        const user = { ...rawUser, role: normalizedRole }
-
         // Update localStorage
         localStorage.setItem("authToken", data.token)
-        localStorage.setItem("user", JSON.stringify(user))
+        localStorage.setItem("user", JSON.stringify(normalizedUser))
 
         // Dispatch custom event to notify AuthContext
         window.dispatchEvent(new Event("authChange"))
 
+        // Get redirect path based on user role and status
+        const redirectPath = getUserRedirectPath(normalizedUser)
+        
+        console.log("Signin: User check:", {
+          normalizedRole,
+          userStatus,
+          redirectPath,
+          normalizedUser
+        })
+        
+        dispatch({ type: "SET_STATUS", field: "success", value: data.message || "Sign in successful" })
+
         // Wait for AuthContext to update
         setTimeout(() => {
-          console.log("Navigating post-auth, localStorage:", {
-            authToken: localStorage.getItem("authToken"),
-            user: localStorage.getItem("user"),
-          })
-          // Redirect based on role: admin -> /admin, security -> /security, user -> /dashboard
-          const destination = user.role === "admin" ? "/admin" : user.role === "security" ? "/security" : "/dashboard"
-          navigate(destination, { replace: true })
+          console.log("Signin: Redirecting to:", redirectPath)
+          navigate(redirectPath, { replace: true })
         }, 200)
       }
     } catch (err) {

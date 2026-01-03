@@ -1,6 +1,7 @@
 "use client"
 import { Navigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
+import { shouldShowPendingPage, isAutoApproved, getUserRedirectPath } from "../utils/userRedirect"
 
 const AuthGuard = ({ children, allowedRoles = [], requirePendingStatus = false }) => {
   const { user, isAuthenticated, loading } = useAuth()
@@ -23,34 +24,17 @@ const AuthGuard = ({ children, allowedRoles = [], requirePendingStatus = false }
     return <Navigate to="/signin" replace />
   }
 
-  const userStatus = user?.status
-  const userRole = user?.role
-  
-  // CRITICAL: Staff and admin are auto-approved - they should NEVER be blocked regardless of status
-  // Check role FIRST before any status checks
-  // Normalize role to handle any variations
-  const normalizedRole = userRole === "staff" ? "security" : userRole
-  const isAutoApproved = normalizedRole === "admin" || normalizedRole === "security" || normalizedRole === "staff"
+  // CRITICAL: Use utility functions to check user status
+  const userIsAutoApproved = isAutoApproved(user)
+  const userShouldShowPending = shouldShowPendingPage(user)
   
   // Special handling for pending page - ONLY allow regular users with pending status
   if (requirePendingStatus) {
-    // CRITICAL: If admin/security/staff tries to access pending page, redirect them immediately
-    // This check MUST happen first to prevent admin/security from seeing pending page
-    if (isAutoApproved) {
-      console.log("AuthGuard: Admin/Security/Staff user tried to access pending page, redirecting. Role:", normalizedRole)
-      const destination = normalizedRole === "admin" ? "/admin" : normalizedRole === "security" ? "/security" : "/dashboard"
-      return <Navigate to={destination} replace />
-    }
-    // Only allow users with role "user" and status "pending"
-    // If role is not "user", redirect to dashboard
-    if (normalizedRole !== "user") {
-      console.log("AuthGuard: Non-user role tried to access pending page, redirecting. Role:", normalizedRole)
-      return <Navigate to="/dashboard" replace />
-    }
-    // If status is not "pending", redirect to dashboard
-    if (userStatus !== "pending") {
-      console.log("AuthGuard: User status is not pending, redirecting. Status:", userStatus)
-      return <Navigate to="/dashboard" replace />
+    // CRITICAL: If user should NOT see pending page, redirect them immediately
+    if (!userShouldShowPending) {
+      const redirectPath = getUserRedirectPath(user)
+      console.log("AuthGuard: User should not see pending page, redirecting. Role:", user?.role, "Status:", user?.status, "Redirect:", redirectPath)
+      return <Navigate to={redirectPath} replace />
     }
     // User is a regular user with pending status - allow access to pending page
     console.log("AuthGuard: Regular user with pending status, allowing access to pending page")
@@ -59,28 +43,34 @@ const AuthGuard = ({ children, allowedRoles = [], requirePendingStatus = false }
   
   // For all other routes, check status for regular users ONLY
   // Admin/security/staff bypass all status checks
-  if (!isAutoApproved) {
+  if (!userIsAutoApproved) {
     // Only regular users need approval
-    const isApproved = userStatus === "approved"
+    const userStatus = user?.status
     
-    if (!isApproved) {
-      // Redirect pending users to pending page, rejected users to signin
-      if (userStatus === "pending") {
-        console.log("AuthGuard: Regular user with pending status, redirecting to pending page")
-        return <Navigate to="/pending" replace />
-      } else if (userStatus === "rejected") {
-        console.log("AuthGuard: Regular user with rejected status, redirecting to signin")
-        return <Navigate to="/signin" state={{ infoMessage: "Your account has been rejected. Please contact support." }} replace />
-      }
-      // Fallback for any other status - redirect to pending page
+    if (userStatus === "rejected") {
+      console.log("AuthGuard: Regular user with rejected status, redirecting to signin")
+      return <Navigate to="/signin" state={{ infoMessage: "Your account has been rejected. Please contact support." }} replace />
+    }
+    
+    // If user should see pending page, redirect them
+    if (userShouldShowPending) {
+      console.log("AuthGuard: Regular user with pending status, redirecting to pending page")
+      return <Navigate to="/pending" replace />
+    }
+    
+    // If user is not approved and not pending, redirect to pending (fallback)
+    if (userStatus !== "approved") {
       console.log("AuthGuard: Regular user with unknown status, redirecting to pending page. Status:", userStatus)
       return <Navigate to="/pending" replace />
     }
   }
   
   // Admin/security/staff users pass through here without status checks
-  console.log("AuthGuard: User authorized. Role:", normalizedRole, "Status:", userStatus)
+  console.log("AuthGuard: User authorized. Role:", user?.role, "Status:", user?.status)
 
+  // Normalize role for allowedRoles check
+  const normalizedRole = user?.role === "staff" ? "security" : user?.role
+  
   if (allowedRoles.length > 0 && !allowedRoles.includes(normalizedRole)) {
     console.log("AuthGuard: User role not in allowed roles. User role:", normalizedRole, "Allowed:", allowedRoles)
     return <Navigate to="/unauthorized" replace />

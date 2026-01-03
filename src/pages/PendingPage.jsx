@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
+import { shouldShowPendingPage, getUserRedirectPath } from "../utils/userRedirect"
 
 const BASE_URL =
   import.meta.env?.VITE_BASE_URL ||
@@ -82,34 +83,15 @@ export default function PendingPage() {
           }
         }
 
-        // CRITICAL CHECK #1: Staff and admin are auto-approved - redirect IMMEDIATELY
-        // This check MUST happen FIRST to prevent admin/security from seeing pending page
-        if (userRole === "admin" || userRole === "security" || userRole === "staff") {
-          console.log("PendingPage: Admin/Security/Staff user detected, redirecting immediately to:", userRole)
-          const destination = userRole === "admin" ? "/admin" : userRole === "security" ? "/security" : "/dashboard"
-          navigate(destination, { replace: true })
-          return
-        }
-
-        // CRITICAL CHECK #2: ONLY regular users (role === "user") should see this page
-        // If role is anything other than "user", redirect immediately
-        if (userRole !== "user") {
-          console.log("PendingPage: Non-user role detected:", userRole, "redirecting to dashboard")
-          navigate("/dashboard", { replace: true })
-          return
-        }
-
-        // CRITICAL CHECK #3: If already approved, redirect to home immediately
-        if (userStatus === "approved") {
-          console.log("PendingPage: User already approved, redirecting to dashboard")
-          navigate("/dashboard", { replace: true })
-          return
-        }
-
-        // CRITICAL CHECK #4: Only show pending page if: role is "user" AND status is "pending"
-        if (userStatus !== "pending") {
-          console.log("PendingPage: User status is not pending:", userStatus, "redirecting to dashboard")
-          navigate("/dashboard", { replace: true })
+        // CRITICAL: Check if user should see pending page
+        // ONLY regular users (role: "user") with status "pending" should see this page
+        const shouldShowPending = shouldShowPendingPage(userData)
+        
+        if (!shouldShowPending) {
+          // User should NOT see pending page - redirect to appropriate page
+          const redirectPath = getUserRedirectPath(userData)
+          console.log("PendingPage: User should not see pending page. Role:", userRole, "Status:", userStatus, "Redirecting to:", redirectPath)
+          navigate(redirectPath, { replace: true })
           return
         }
 
@@ -170,43 +152,26 @@ export default function PendingPage() {
       const normalizedUser = { ...updatedUser, role: normalizedRole }
       
       const newStatus = updatedUser.status || "pending"
-      const newRole = normalizedRole
-
-      // CRITICAL ROLE CHECK: If role changed to admin/security, redirect immediately
-      if (newRole === "admin" || newRole === "security" || newRole === "staff") {
-        console.log("PendingPage: User role changed to admin/security, redirecting")
-        const destination = newRole === "admin" ? "/admin" : newRole === "security" ? "/security" : "/dashboard"
-        localStorage.setItem("user", JSON.stringify(normalizedUser))
-        window.dispatchEvent(new Event("authChange"))
-        navigate(destination, { replace: true })
-        return
-      }
-
-      // CRITICAL ROLE CHECK: Only regular users should see pending page
-      if (newRole !== "user") {
-        console.log("PendingPage: User role is not 'user':", newRole, "redirecting")
-        localStorage.setItem("user", JSON.stringify(normalizedUser))
-        window.dispatchEvent(new Event("authChange"))
-        navigate("/dashboard", { replace: true })
-        return
-      }
+      const updatedUserWithStatus = { ...normalizedUser, status: newStatus }
 
       // Update localStorage with latest data
-      localStorage.setItem("user", JSON.stringify(normalizedUser))
+      localStorage.setItem("user", JSON.stringify(updatedUserWithStatus))
 
-      // If approved, redirect to home immediately
-      if (newStatus === "approved") {
-        console.log("PendingPage: User approved! Redirecting to dashboard...")
+      // CRITICAL: Check if user should still see pending page
+      const shouldStillShowPending = shouldShowPendingPage(updatedUserWithStatus)
+      
+      if (!shouldStillShowPending) {
+        // User should no longer see pending page - redirect to appropriate page
+        const redirectPath = getUserRedirectPath(updatedUserWithStatus)
+        console.log("PendingPage: User status changed, should not see pending page. Redirecting to:", redirectPath)
         window.dispatchEvent(new Event("authChange"))
-        setTimeout(() => {
-          navigate("/dashboard", { replace: true })
-        }, 100)
+        navigate(redirectPath, { replace: true })
         return
       }
 
-      // Update status (still pending)
+      // User is still a regular user with pending status - update state
       setStatus(newStatus)
-      setUser(normalizedUser)
+      setUser(updatedUserWithStatus)
     } catch (error) {
       console.error("PendingPage: Error checking status:", error)
       // If there's a network error, don't update state but allow user to retry
