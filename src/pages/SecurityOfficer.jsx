@@ -59,30 +59,48 @@ export default function SecurityOfficer() {
 
   useEffect(() => {
     // Check if user is security officer or admin
-    try {
-      const u = JSON.parse(localStorage.getItem("user") || "null")
-      const token = localStorage.getItem("authToken")
-      
-      if (!u || !token || (u.role !== "security" && u.role !== "staff" && u.role !== "admin")) {
-        navigate("/signin", { replace: true })
-        return
-      }
+    // Wait a bit for AuthContext to load fresh user data from API
+    const checkUser = () => {
+      try {
+        const token = localStorage.getItem("authToken")
+        if (!token) {
+          navigate("/signin", { replace: true })
+          return
+        }
 
-      // Security officers should never be on pending page - redirect if somehow they are
-      if (u.status === "pending" && u.role === "user") {
-        console.warn("Security officer has wrong status - clearing and redirecting")
-        localStorage.removeItem("user")
-        localStorage.removeItem("authToken")
+        // Wait a bit for AuthContext to fetch from API, then check
+        setTimeout(() => {
+          const u = JSON.parse(localStorage.getItem("user") || "null")
+          
+          // Normalize role
+          const userRole = u?.role === "staff" ? "security" : u?.role
+          
+          if (!u || (userRole !== "security" && userRole !== "admin")) {
+            console.log("SecurityOfficer page: User is not security/admin, redirecting. Role:", userRole)
+            navigate("/signin", { replace: true })
+            return
+          }
+
+          // Security officers should never be on pending page - redirect if somehow they are
+          if (u.status === "pending" && userRole === "user") {
+            console.warn("SecurityOfficer page: Security officer has wrong status - clearing and redirecting")
+            localStorage.removeItem("user")
+            localStorage.removeItem("authToken")
+            navigate("/signin", { replace: true })
+            return
+          }
+
+          // User is valid security/admin, proceed to fetch data
+          fetchClaims()
+          fetchFoundItems()
+        }, 100) // Small delay to allow AuthContext to fetch from API
+      } catch {
         navigate("/signin", { replace: true })
         return
       }
-    } catch {
-      navigate("/signin", { replace: true })
-      return
     }
-
-    fetchClaims()
-    fetchFoundItems()
+    
+    checkUser()
   }, [navigate])
 
   const stats = useMemo(() => {

@@ -33,30 +33,48 @@ export default function Admin() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    try {
-      const u = JSON.parse(localStorage.getItem("user") || "null")
-      const token = localStorage.getItem("authToken")
-      
-      // Check if user is admin - if not, redirect to signin
-      if (!u || !token || u.role !== "admin") {
-        navigate("/signin", { replace: true })
-        return
-      }
+    // Use AuthContext user if available, otherwise check localStorage
+    // This ensures we have the correct user data after AuthContext fetches from API
+    const checkUser = () => {
+      try {
+        const token = localStorage.getItem("authToken")
+        if (!token) {
+          navigate("/signin", { replace: true })
+          return
+        }
 
-      // CRITICAL: Admin should NEVER be on pending page - redirect if somehow they are
-      if (u.status === "pending" && u.role === "user") {
-        // This shouldn't happen, but if admin data is corrupted, clear it
-        console.warn("Admin user has pending status - clearing and redirecting")
-        localStorage.removeItem("user")
-        localStorage.removeItem("authToken")
-        navigate("/signin", { replace: true })
-        return
-      }
+        // Wait a bit for AuthContext to load, then check
+        setTimeout(() => {
+          const u = JSON.parse(localStorage.getItem("user") || "null")
+          
+          // Normalize role
+          const userRole = u?.role === "staff" ? "security" : u?.role
+          
+          // Check if user is admin - if not, redirect to signin
+          if (!u || userRole !== "admin") {
+            console.log("Admin page: User is not admin, redirecting. Role:", userRole)
+            navigate("/signin", { replace: true })
+            return
+          }
 
-      setUser(u)
-    } catch {
-      navigate("/signin", { replace: true })
+          // CRITICAL: Admin should NEVER be on pending page - redirect if somehow they are
+          if (u.status === "pending" && userRole === "user") {
+            // This shouldn't happen, but if admin data is corrupted, clear it
+            console.warn("Admin page: Admin user has wrong status - clearing and redirecting")
+            localStorage.removeItem("user")
+            localStorage.removeItem("authToken")
+            navigate("/signin", { replace: true })
+            return
+          }
+
+          setUser(u)
+        }, 100) // Small delay to allow AuthContext to fetch from API
+      } catch {
+        navigate("/signin", { replace: true })
+      }
     }
+    
+    checkUser()
   }, [navigate])
 
   useEffect(() => {

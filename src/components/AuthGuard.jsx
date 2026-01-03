@@ -17,34 +17,43 @@ const AuthGuard = ({ children, allowedRoles = [], requirePendingStatus = false }
     return <Navigate to="/signin" replace />
   }
 
+  // CRITICAL: Validate user object exists and has required properties
+  if (!user || !user.role) {
+    console.error("AuthGuard: Invalid user object, redirecting to signin")
+    return <Navigate to="/signin" replace />
+  }
+
   const userStatus = user?.status
   const userRole = user?.role
   
   // CRITICAL: Staff and admin are auto-approved - they should NEVER be blocked regardless of status
   // Check role FIRST before any status checks
-  const isAutoApproved = userRole === "admin" || userRole === "security" || userRole === "staff"
+  // Normalize role to handle any variations
+  const normalizedRole = userRole === "staff" ? "security" : userRole
+  const isAutoApproved = normalizedRole === "admin" || normalizedRole === "security" || normalizedRole === "staff"
   
   // Special handling for pending page - ONLY allow regular users with pending status
   if (requirePendingStatus) {
     // CRITICAL: If admin/security/staff tries to access pending page, redirect them immediately
     // This check MUST happen first to prevent admin/security from seeing pending page
     if (isAutoApproved) {
-      console.log("AuthGuard: Admin/Security/Staff user tried to access pending page, redirecting")
-      const destination = userRole === "admin" ? "/admin" : userRole === "security" ? "/security" : "/dashboard"
+      console.log("AuthGuard: Admin/Security/Staff user tried to access pending page, redirecting. Role:", normalizedRole)
+      const destination = normalizedRole === "admin" ? "/admin" : normalizedRole === "security" ? "/security" : "/dashboard"
       return <Navigate to={destination} replace />
     }
     // Only allow users with role "user" and status "pending"
     // If role is not "user", redirect to dashboard
-    if (userRole !== "user") {
-      console.log("AuthGuard: Non-user role tried to access pending page, redirecting")
+    if (normalizedRole !== "user") {
+      console.log("AuthGuard: Non-user role tried to access pending page, redirecting. Role:", normalizedRole)
       return <Navigate to="/dashboard" replace />
     }
     // If status is not "pending", redirect to dashboard
     if (userStatus !== "pending") {
-      console.log("AuthGuard: User status is not pending, redirecting")
+      console.log("AuthGuard: User status is not pending, redirecting. Status:", userStatus)
       return <Navigate to="/dashboard" replace />
     }
     // User is a regular user with pending status - allow access to pending page
+    console.log("AuthGuard: Regular user with pending status, allowing access to pending page")
     return children
   }
   
@@ -64,14 +73,16 @@ const AuthGuard = ({ children, allowedRoles = [], requirePendingStatus = false }
         return <Navigate to="/signin" state={{ infoMessage: "Your account has been rejected. Please contact support." }} replace />
       }
       // Fallback for any other status - redirect to pending page
-      console.log("AuthGuard: Regular user with unknown status, redirecting to pending page")
+      console.log("AuthGuard: Regular user with unknown status, redirecting to pending page. Status:", userStatus)
       return <Navigate to="/pending" replace />
     }
   }
   
   // Admin/security/staff users pass through here without status checks
+  console.log("AuthGuard: User authorized. Role:", normalizedRole, "Status:", userStatus)
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
+  if (allowedRoles.length > 0 && !allowedRoles.includes(normalizedRole)) {
+    console.log("AuthGuard: User role not in allowed roles. User role:", normalizedRole, "Allowed:", allowedRoles)
     return <Navigate to="/unauthorized" replace />
   }
 
