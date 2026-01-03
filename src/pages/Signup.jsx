@@ -373,7 +373,11 @@ export default function Signup() {
           // Regular user with pending status - redirect to pending page
           console.log("Signup: Regular user with pending status, redirecting to pending page")
           
-          // Store token and user data
+          // CRITICAL: Clear old user data first to prevent conflicts
+          localStorage.removeItem("authToken")
+          localStorage.removeItem("user")
+          
+          // Store NEW token and user data
           if (data.token) {
             localStorage.setItem("authToken", data.token)
           }
@@ -401,7 +405,11 @@ export default function Signup() {
           
           dispatch({ type: "SET_STATUS", field: "success", value: data.message || "Account created successfully!" })
 
-          // Update localStorage
+          // CRITICAL: Clear old user data first to prevent conflicts
+          localStorage.removeItem("authToken")
+          localStorage.removeItem("user")
+          
+          // Store NEW token and user data
           localStorage.setItem("authToken", data.token)
           localStorage.setItem("user", JSON.stringify(normalizedUser))
 
@@ -439,7 +447,11 @@ export default function Signup() {
           return
         }
         
-        // Update localStorage
+        // CRITICAL: Clear old user data first to prevent conflicts
+        localStorage.removeItem("authToken")
+        localStorage.removeItem("user")
+        
+        // Store NEW token and user data
         localStorage.setItem("authToken", data.token)
         localStorage.setItem("user", JSON.stringify(normalizedUser))
 
@@ -873,7 +885,11 @@ export default function Signup() {
                             const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "admin"
                             const user = { ...rawUser, role: normalizedRole }
                             
-                            // Store admin user data - this will overwrite any previous user data
+                            // CRITICAL: Clear old user data first to prevent conflicts
+                            localStorage.removeItem("authToken")
+                            localStorage.removeItem("user")
+                            
+                            // Store NEW admin user data
                             localStorage.setItem("authToken", data.token || "admin-authenticated")
                             localStorage.setItem("user", JSON.stringify(user))
                             

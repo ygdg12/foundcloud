@@ -67,20 +67,22 @@ export default function PendingPage() {
             // Update localStorage with latest data
             localStorage.setItem("user", JSON.stringify(userData))
           } else {
-            console.warn("PendingPage: Failed to fetch from /api/auth/me, using cached data")
-            // Use cached data if API fails
-            if (!cachedUserData) {
-              navigate("/signin", { replace: true })
-              return
-            }
-          }
-        } catch (apiError) {
-          console.warn("PendingPage: Error fetching from /api/auth/me:", apiError)
-          // Use cached data if API fails
-          if (!cachedUserData) {
+            // If API fails, don't use cached data - clear it to prevent wrong user access
+            console.error("PendingPage: Failed to fetch from /api/auth/me. Status:", response.status)
+            console.error("PendingPage: Clearing localStorage for security")
+            localStorage.removeItem("authToken")
+            localStorage.removeItem("user")
             navigate("/signin", { replace: true })
             return
           }
+        } catch (apiError) {
+          // If API call fails, don't use cached data - clear it to prevent wrong user access
+          console.error("PendingPage: Error fetching from /api/auth/me:", apiError)
+          console.error("PendingPage: Clearing localStorage for security")
+          localStorage.removeItem("authToken")
+          localStorage.removeItem("user")
+          navigate("/signin", { replace: true })
+          return
         }
 
         // CRITICAL: Check if user should see pending page

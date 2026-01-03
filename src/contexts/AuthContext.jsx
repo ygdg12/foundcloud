@@ -180,9 +180,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // On initial load, fetch fresh user data from API
+    // On initial load, ALWAYS fetch fresh user data from API (never use cached data)
+    // This ensures we have the correct user data and prevents stale data issues
     checkAuth(false);
-    window.addEventListener("authChange", () => checkAuth(true)); // Use cached data on authChange events
+    // On authChange events, also fetch fresh data to ensure we have the latest user info
+    window.addEventListener("authChange", () => checkAuth(false)); // Fetch fresh data on authChange too
     console.log("AuthContext: Added authChange listener");
     return () => {
       window.removeEventListener("authChange", checkAuth);
