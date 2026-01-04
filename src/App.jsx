@@ -9,7 +9,6 @@ import FoundItems from "./pages/Founditems";
 import LostItems from "./pages/Lostitems.jsx";
 import Admin from "./pages/Admin.jsx";
 import SecurityOfficer from "./pages/SecurityOfficer.jsx";
-import PendingPage from "./pages/PendingPage.jsx";
 
 function App() {
   return (
@@ -18,14 +17,6 @@ function App() {
         <Routes>
           <Route path="/" element={<Signup />} />
           <Route path="/signin" element={<Signup />} />
-          <Route 
-            path="/pending" 
-            element={
-              <AuthGuard allowedRoles={["user"]} requirePendingStatus={true}>
-                <PendingPage />
-              </AuthGuard>
-            } 
-          />
 
           {/* Public Found Items page (both cases) */}
           <Route path="/Founditems" element={<FoundItems />} />

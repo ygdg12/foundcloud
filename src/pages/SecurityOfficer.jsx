@@ -81,14 +81,6 @@ export default function SecurityOfficer() {
             return
           }
 
-          // Security officers should never be on pending page - redirect if somehow they are
-          if (u.status === "pending" && userRole === "user") {
-            console.warn("SecurityOfficer page: Security officer has wrong status - clearing and redirecting")
-            localStorage.removeItem("user")
-            localStorage.removeItem("authToken")
-            navigate("/signin", { replace: true })
-            return
-          }
 
           // User is valid security/admin, proceed to fetch data
           fetchClaims()
