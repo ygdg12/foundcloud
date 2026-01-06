@@ -1,8 +1,9 @@
 /**
- * Utility function to determine the correct redirect path based on user role
- * All users are now auto-approved, so we only check roles.
- * 
- * @param {Object} user - User object with role
+ * Utility function to determine the correct redirect path based on user role.
+ * Backend now enforces user status ("pending" | "approved" | "rejected").
+ * This helper assumes sign-in only succeeds for "approved" users.
+ *
+ * @param {Object} user - User object with role (and optionally status)
  * @returns {string} - Redirect path
  */
 export const getUserRedirectPath = (user) => {

@@ -458,7 +458,7 @@ export default function Admin() {
           )}
         </div>
 
-        {view === "dashboard" ? (
+            {view === "dashboard" ? (
           <>
             {/* Stats Cards */}
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -601,11 +601,13 @@ export default function Admin() {
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Student ID</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Role</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {users.map((u) => {
+                      const status = u.status || "pending"
                       return (
                         <tr key={u._id || u.id} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-3 px-4">{u.name}</td>
@@ -621,12 +623,108 @@ export default function Admin() {
                             </span>
                           </td>
                           <td className="py-3 px-4">
-                            <button
-                              onClick={() => handleDeleteClick(u)}
-                              className="px-3 py-1 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition"
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                status === "approved"
+                                  ? "bg-green-100 text-green-800"
+                                  : status === "rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                              }`}
                             >
-                              Remove
-                            </button>
+                              {status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex flex-wrap gap-2">
+                              {status === "pending" && (
+                                <>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        const token = localStorage.getItem("authToken")
+                                        const userId = u._id || u.id
+                                        const res = await fetch(
+                                          `${BASE_URL}/api/admin/users/${userId}/approve`,
+                                          {
+                                            method: "PATCH",
+                                            headers: {
+                                              Authorization: `Bearer ${token}`,
+                                              "Content-Type": "application/json",
+                                              Accept: "application/json",
+                                            },
+                                            mode: "cors",
+                                          }
+                                        )
+                                        const data = await res.json().catch(() => ({}))
+                                        if (!res.ok) {
+                                          throw new Error(data.message || "Failed to approve user")
+                                        }
+                                        setUsers((prev) =>
+                                          prev.map((userItem) =>
+                                            (userItem._id || userItem.id) === userId
+                                              ? { ...userItem, status: "approved" }
+                                              : userItem
+                                          )
+                                        )
+                                      } catch (err) {
+                                        console.error("Error approving user:", err)
+                                        alert(err.message || "Error approving user")
+                                      }
+                                    }}
+                                    className="px-3 py-1 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        const token = localStorage.getItem("authToken")
+                                        const userId = u._id || u.id
+                                        const res = await fetch(
+                                          `${BASE_URL}/api/admin/users/${userId}/reject`,
+                                          {
+                                            method: "PATCH",
+                                            headers: {
+                                              Authorization: `Bearer ${token}`,
+                                              "Content-Type": "application/json",
+                                              Accept: "application/json",
+                                            },
+                                            mode: "cors",
+                                            body: JSON.stringify({
+                                              reason: "Rejected by admin via dashboard",
+                                            }),
+                                          }
+                                        )
+                                        const data = await res.json().catch(() => ({}))
+                                        if (!res.ok) {
+                                          throw new Error(data.message || "Failed to reject user")
+                                        }
+                                        setUsers((prev) =>
+                                          prev.map((userItem) =>
+                                            (userItem._id || userItem.id) === userId
+                                              ? { ...userItem, status: "rejected" }
+                                              : userItem
+                                          )
+                                        )
+                                      } catch (err) {
+                                        console.error("Error rejecting user:", err)
+                                        alert(err.message || "Error rejecting user")
+                                      }
+                                    }}
+                                    className="px-3 py-1 rounded-lg bg-yellow-500 text-white text-xs font-medium hover:bg-yellow-600 transition"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                              <button
+                                onClick={() => handleDeleteClick(u)}
+                                className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition"
+                              >
+                                Remove
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       )

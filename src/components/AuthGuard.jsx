@@ -1,7 +1,6 @@
 "use client"
 import { Navigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
-import { getUserRedirectPath } from "../utils/userRedirect"
 
 const AuthGuard = ({ children, allowedRoles = [] }) => {
   const { user, isAuthenticated, loading } = useAuth()
@@ -24,13 +23,34 @@ const AuthGuard = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/signin" replace />
   }
 
+  // Enforce status-based access: only "approved" users may access protected routes
+  if (user.status && user.status !== "approved") {
+    const message =
+      user.status === "rejected"
+        ? "Your account was rejected. Contact support."
+        : "Your account is waiting for admin approval.";
+
+    return (
+      <Navigate
+        to="/pending-approval"
+        replace
+        state={{ status: user.status, message }}
+      />
+    );
+  }
+
   console.log("AuthGuard: User authorized. Role:", user?.role)
 
   // Normalize role for allowedRoles check
   const normalizedRole = user?.role === "staff" ? "security" : user?.role
   
   if (allowedRoles.length > 0 && !allowedRoles.includes(normalizedRole)) {
-    console.log("AuthGuard: User role not in allowed roles. User role:", normalizedRole, "Allowed:", allowedRoles)
+    console.log(
+      "AuthGuard: User role not in allowed roles. User role:",
+      normalizedRole,
+      "Allowed:",
+      allowedRoles
+    )
     return <Navigate to="/unauthorized" replace />
   }
 

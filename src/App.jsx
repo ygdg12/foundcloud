@@ -9,6 +9,7 @@ import FoundItems from "./pages/Founditems";
 import LostItems from "./pages/Lostitems.jsx";
 import Admin from "./pages/Admin.jsx";
 import SecurityOfficer from "./pages/SecurityOfficer.jsx";
+import PendingApprovalPage from "./pages/PendingApproval.jsx";
 
 function App() {
   return (
@@ -80,6 +81,9 @@ function App() {
 
           {/* Admin portal (client-side guarded) */}
           <Route path="/admin-portal" element={<Admin />} />
+
+          {/* Pending approval info page */}
+          <Route path="/pending-approval" element={<PendingApprovalPage />} />
 
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" replace />} />

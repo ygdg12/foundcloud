@@ -317,9 +317,34 @@ export default function Signup() {
 
       if (!response.ok) {
         let errorMessage = data?.message || data?.error || `Authentication failed (${response.status})`
-        
-        // Handle specific verification code errors
-        if (response.status === 400 || response.status === 403) {
+
+        // Login-specific handling for pending/rejected users
+        if (!state.isSignup && response.status === 403) {
+          // Backend message is already clear, respect it
+          if (typeof data?.message === "string") {
+            errorMessage = data.message
+          }
+
+          const lowerMessage = (data?.message || "").toLowerCase()
+
+          // Redirect pending users to dedicated info page
+          if (lowerMessage.includes("pending")) {
+            navigate("/pending-approval", {
+              replace: true,
+              state: { status: "pending", message: data?.message },
+            })
+          } else if (lowerMessage.includes("rejected")) {
+            // For rejected, keep them on the login page with a clear error
+            // (Spec allows either behavior; here we show a blocking alert on login)
+            errorMessage = data?.message || "Your account was rejected by an admin."
+          }
+        } else if (!state.isSignup && response.status === 401) {
+          // Invalid credentials on login
+          errorMessage = "Invalid email or password"
+        }
+
+        // Handle specific verification code errors (signup / staff registration)
+        if (state.isSignup && (response.status === 400 || response.status === 403)) {
           const lowerMessage = errorMessage.toLowerCase()
           if (lowerMessage.includes("verification code") || lowerMessage.includes("verification")) {
             if (lowerMessage.includes("required")) {
@@ -333,7 +358,7 @@ export default function Signup() {
             }
           }
         }
-        
+
         console.error("API error:", errorMessage, data)
         throw new Error(errorMessage)
       }
@@ -343,53 +368,69 @@ export default function Signup() {
         // Get user data from response - try multiple possible locations
         const rawUser = data.user || data || {}
         // Get role from user object, response, or payload
-        const userRole = rawUser.role || data.role || payload.role || "user"
-        
+        const userRoleFromResponse = rawUser.role || data.role || payload.role || "user"
+
         console.log("Signup response - Full data:", data)
-        console.log("Signup response - userRole:", userRole, "rawUser:", rawUser)
-        
+        console.log("Signup response - userRole:", userRoleFromResponse, "rawUser:", rawUser)
+
         // Normalize user and role from response
-        const serverRole = userRole === "staff" ? "security" : userRole
+        const serverRole = userRoleFromResponse === "staff" ? "security" : userRoleFromResponse
         const allowedRoles = ["user", "security", "admin"]
         const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
         const normalizedUser = { ...rawUser, role: normalizedRole }
-        
-        console.log("Signup: Account created successfully, redirecting to dashboard")
-        
-        dispatch({ type: "SET_STATUS", field: "success", value: data.message || "Account created successfully!" })
 
-        // Clear old user data first to prevent conflicts
+        const status = normalizedUser.status || "pending"
+        const successMessage =
+          data.message ||
+          (status === "approved"
+            ? "Account created and approved. Please sign in."
+            : "Account created. Please wait for admin approval.")
+
+        dispatch({ type: "SET_STATUS", field: "success", value: successMessage })
+
+        // IMPORTANT with new rules:
+        // - Do NOT expect or store a token for regular users at signup
+        // - For staff (approved on creation), keep flow simple: redirect to login too
         localStorage.removeItem("authToken")
         localStorage.removeItem("user")
-        
-        // Store NEW token and user data
-        localStorage.setItem("authToken", data.token)
-        localStorage.setItem("user", JSON.stringify(normalizedUser))
 
-        // Dispatch custom event to notify AuthContext
-        window.dispatchEvent(new Event("authChange"))
-
-        // Get redirect path based on user role
-        const redirectPath = getUserRedirectPath(normalizedUser)
-        
+        // Send user back to login with a friendly info message
         setTimeout(() => {
-          console.log("Signup: Redirecting to:", redirectPath)
-          navigate(redirectPath, { replace: true })
-        }, 200)
+          navigate("/signin", {
+            replace: true,
+            state: {
+              infoMessage:
+                status === "approved"
+                  ? "Account approved. Please sign in."
+                  : "Your account is created and waiting for admin approval. You can log in once approved.",
+            },
+          })
+        }, 400)
       } else {
-        // Handle signin response
+        // Handle signin response (only approved/admin users get here)
         const rawUser = data.user || {}
-        
+
         // Normalize user and role from response
         const serverRole = rawUser.role === "staff" ? "security" : rawUser.role
         const allowedRoles = ["user", "security", "admin"]
         const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user"
         const normalizedUser = { ...rawUser, role: normalizedRole }
-        
+
+        // Extra safety: ensure status is approved before proceeding
+        if (normalizedUser.status && normalizedUser.status !== "approved") {
+          const msg =
+            normalizedUser.status === "rejected"
+              ? "Your account was rejected by an admin."
+              : "Your account is pending admin approval."
+
+          dispatch({ type: "SET_STATUS", field: "error", value: msg })
+          return
+        }
+
         // Clear old user data first to prevent conflicts
         localStorage.removeItem("authToken")
         localStorage.removeItem("user")
-        
+
         // Store NEW token and user data
         localStorage.setItem("authToken", data.token)
         localStorage.setItem("user", JSON.stringify(normalizedUser))
@@ -399,9 +440,9 @@ export default function Signup() {
 
         // Get redirect path based on user role
         const redirectPath = getUserRedirectPath(normalizedUser)
-        
+
         console.log("Signin: Redirecting to:", redirectPath)
-        
+
         dispatch({ type: "SET_STATUS", field: "success", value: data.message || "Sign in successful" })
 
         // Wait for AuthContext to update
