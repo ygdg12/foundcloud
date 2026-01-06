@@ -76,8 +76,9 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    // CRITICAL: Fetch fresh user data from /api/auth/me to ensure we have the correct user
-    // This prevents issues where localStorage has stale data from a different user
+    // Prefer fresh user data from /api/auth/me, but if that fails (e.g. CORS / backend down),
+    // fall back to cached user instead of logging the user out. This prevents admin refresh
+    // from kicking users to the signup page when the backend has temporary issues.
     if (!skipApiFetch) {
       try {
         const response = await fetch(`${BASE_URL}/api/auth/me`, {
@@ -127,26 +128,17 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
           return;
         } else {
-          // If API fails, don't use cached data - clear it to prevent wrong user access
           console.error("checkAuth: Failed to fetch from /api/auth/me. Status:", response.status);
-          console.error("checkAuth: This might be a CORS issue or backend problem. Clearing localStorage for security.");
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("user");
-          setUser(null);
-          setIsAuthenticated(false);
-          setLoading(false);
-          return;
+          console.error(
+            "checkAuth: This might be a CORS or backend issue. Falling back to cached user data if available."
+          );
         }
       } catch (apiError) {
-        // If API call fails (network error, CORS, etc.), don't use cached data
+        // If API call fails (network error, CORS, etc.), fall back to cached data
         console.error("checkAuth: Error fetching from /api/auth/me:", apiError);
-        console.error("checkAuth: This might be a CORS issue. Clearing localStorage for security.");
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("user");
-        setUser(null);
-        setIsAuthenticated(false);
-        setLoading(false);
-        return;
+        console.error(
+          "checkAuth: Treating this as a temporary backend issue. Will attempt to use cached user data instead."
+        );
       }
     }
 

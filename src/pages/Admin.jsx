@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "../contexts/AuthContext"
 
 const LOGO_SRC = "/foundcloud white.svg"
 
@@ -26,42 +27,25 @@ export default function Admin() {
   const [codeToDelete, setCodeToDelete] = useState(null)
   const [showDeleteCodeModal, setShowDeleteCodeModal] = useState(false)
   const navigate = useNavigate()
+  const { user: authUser, isAuthenticated, loading: authLoading } = useAuth()
 
   useEffect(() => {
-    // Use AuthContext user if available, otherwise check localStorage
-    // This ensures we have the correct user data after AuthContext fetches from API
-    const checkUser = () => {
-      try {
-        const token = localStorage.getItem("authToken")
-        if (!token) {
-          navigate("/signin", { replace: true })
-          return
-        }
+    // Wait for AuthContext to finish loading; guard will handle unauthenticated state
+    if (authLoading) return
 
-        // Wait a bit for AuthContext to load, then check
-        setTimeout(() => {
-          const u = JSON.parse(localStorage.getItem("user") || "null")
-          
-          // Normalize role
-          const userRole = u?.role === "staff" ? "security" : u?.role
-          
-          // Check if user is admin - if not, redirect to signin
-          if (!u || userRole !== "admin") {
-            console.log("Admin page: User is not admin, redirecting. Role:", userRole)
-            navigate("/signin", { replace: true })
-            return
-          }
-
-
-          setUser(u)
-        }, 100) // Small delay to allow AuthContext to fetch from API
-      } catch {
-        navigate("/signin", { replace: true })
-      }
+    if (!isAuthenticated || !authUser) {
+      navigate("/signin", { replace: true })
+      return
     }
-    
-    checkUser()
-  }, [navigate])
+
+    const normalizedRole = authUser.role === "staff" ? "security" : authUser.role
+    if (normalizedRole !== "admin") {
+      navigate("/signin", { replace: true })
+      return
+    }
+
+    setUser(authUser)
+  }, [authUser, authLoading, isAuthenticated, navigate])
 
   useEffect(() => {
     // Fetch dashboard data on mount
@@ -584,6 +568,15 @@ export default function Admin() {
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-black">Users Management</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={fetchUsers}
+                  className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
+                  disabled={loading}
+                >
+                  Refresh
+                </button>
+              </div>
             </div>
             {loading ? (
               <div className="text-center py-12">
