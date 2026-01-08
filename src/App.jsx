@@ -10,6 +10,9 @@ import LostItems from "./pages/Lostitems.jsx";
 import Admin from "./pages/Admin.jsx";
 import SecurityOfficer from "./pages/SecurityOfficer.jsx";
 import PendingApprovalPage from "./pages/PendingApproval.jsx";
+import AboutUs from "./pages/AboutUs.jsx";
+import Contact from "./pages/Contact.jsx";
+import CustomerSupport from "./pages/CustomerSupport.jsx";
 
 function App() {
   return (
@@ -84,6 +87,11 @@ function App() {
 
           {/* Pending approval info page */}
           <Route path="/pending-approval" element={<PendingApprovalPage />} />
+
+          {/* Public Pages */}
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/support" element={<CustomerSupport />} />
 
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
