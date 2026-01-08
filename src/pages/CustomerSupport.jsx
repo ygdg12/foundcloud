@@ -180,11 +180,11 @@ export default function CustomerSupport() {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/")}
                 className={`px-4 py-2 rounded-full border border-red-300/60 font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 ${scrolled ? "text-red-900 hover:bg-red-50" : "text-red-100 hover:bg-white/10 hover:text-white"}`}
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Back to Home</span>
+                <span>Back Sign up Page</span>
               </button>
             </div>
           </nav>
