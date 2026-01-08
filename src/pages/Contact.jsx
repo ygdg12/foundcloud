@@ -80,7 +80,7 @@ export default function Contact() {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/dashboard")}
                 className={`px-4 py-2 rounded-full border border-red-300/60 font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 ${scrolled ? "text-red-900 hover:bg-red-50" : "text-red-100 hover:bg-white/10 hover:text-white"}`}
               >
                 <ArrowLeft className="w-4 h-4" />

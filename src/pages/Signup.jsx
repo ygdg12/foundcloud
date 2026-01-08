@@ -1,7 +1,7 @@
 "use client"
 
 import { useReducer, useEffect } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
+import { useNavigate, useLocation, Link } from "react-router-dom"
 import { getUserRedirectPath } from "../utils/userRedirect"
 import {
   Eye,
@@ -553,9 +553,21 @@ export default function Signup() {
               </div>
             )}
             {state.error && (
-              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">{state.error}</span>
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm mb-2">{state.error}</p>
+                    {state.error.toLowerCase().includes("rejected") && (
+                      <Link
+                        to="/support"
+                        className="text-sm text-destructive hover:underline font-semibold inline-flex items-center gap-1"
+                      >
+                        Contact Customer Support →
+                      </Link>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
