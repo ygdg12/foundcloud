@@ -17,7 +17,7 @@ export default function PendingApprovalPage() {
   const description =
     backendMessage ||
     (status === "rejected"
-      ? "Your account was rejected by an administrator. If you believe this is a mistake, please contact support or your campus administrator."
+      ? "Your account has been rejected by an administrator. Please contact customer support for more information."
       : "Your account has been created and is waiting for admin approval. You will be able to log in once an administrator approves your account.");
 
   return (
@@ -25,6 +25,20 @@ export default function PendingApprovalPage() {
       <div className="max-w-lg w-full bg-white rounded-2xl shadow-2xl border border-red-100 p-8 text-center">
         <h1 className="text-2xl font-bold text-red-900 mb-3">{title}</h1>
         <p className="text-gray-700 mb-6 text-sm sm:text-base">{description}</p>
+        {status === "rejected" && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800 mb-3">
+              If you believe this is a mistake or need assistance, please contact our customer support team.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/support", { replace: true })}
+              className="text-sm text-red-900 hover:text-red-700 font-semibold underline"
+            >
+              Contact Customer Support →
+            </button>
+          </div>
+        )}
         {status !== "rejected" && (
           <p className="text-xs sm:text-sm text-gray-500 mb-6">
             This usually takes a short time. Try logging in again later. If it

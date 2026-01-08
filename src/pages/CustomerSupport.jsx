@@ -170,22 +170,22 @@ export default function CustomerSupport() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-lg sm:text-xl font-bold text-white tracking-tight group-hover:text-red-50 transition-colors duration-300">
+                <span className={`text-lg sm:text-xl font-bold tracking-tight group-hover:text-red-50 transition-colors duration-300 ${scrolled ? "text-red-900" : "text-white"}`}>
                   FoundCloud
                 </span>
-                <span className="text-[10px] sm:text-xs text-red-200 font-medium opacity-80 hidden sm:block">
+                <span className={`text-[10px] sm:text-xs font-medium opacity-80 hidden sm:block ${scrolled ? "text-red-700" : "text-red-200"}`}>
                   Reunite • Recover • Restore
                 </span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Link
-                to="/"
-                className="px-4 py-2 rounded-full border border-red-300/60 text-red-100 hover:bg-white/10 hover:text-white font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+              <button
+                onClick={() => navigate("/")}
+                className={`px-4 py-2 rounded-full border border-red-300/60 font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 ${scrolled ? "text-red-900 hover:bg-red-50" : "text-red-100 hover:bg-white/10 hover:text-white"}`}
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Home</span>
-              </Link>
+              </button>
             </div>
           </nav>
         </div>

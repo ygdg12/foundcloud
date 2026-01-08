@@ -6,26 +6,13 @@ import {
   Mail, 
   Phone, 
   MapPin, 
-  Send,
-  ArrowLeft,
-  CheckCircle,
-  AlertCircle,
-  Loader2
+  ArrowLeft
 } from "lucide-react"
 
 const LOGO_SRC = "/foundcloud white.svg"
 
 export default function Contact() {
   const [scrolled, setScrolled] = useState(false)
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: ""
-  })
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState("")
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -36,45 +23,6 @@ export default function Contact() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    setError("")
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError("")
-    setSuccess(false)
-    setLoading(true)
-
-    // Validate form
-    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-      setError("Please fill in all fields")
-      setLoading(false)
-      return
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.email)) {
-      setError("Please enter a valid email address")
-      setLoading(false)
-      return
-    }
-
-    // Simulate form submission (replace with actual API call)
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      setSuccess(true)
-      setFormData({ name: "", email: "", subject: "", message: "" })
-      setTimeout(() => setSuccess(false), 5000)
-    } catch (err) {
-      setError("Failed to send message. Please try again later.")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const contactInfo = [
     {
@@ -122,22 +70,22 @@ export default function Contact() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-lg sm:text-xl font-bold text-white tracking-tight group-hover:text-red-50 transition-colors duration-300">
+                <span className={`text-lg sm:text-xl font-bold tracking-tight group-hover:text-red-50 transition-colors duration-300 ${scrolled ? "text-red-900" : "text-white"}`}>
                   FoundCloud
                 </span>
-                <span className="text-[10px] sm:text-xs text-red-200 font-medium opacity-80 hidden sm:block">
+                <span className={`text-[10px] sm:text-xs font-medium opacity-80 hidden sm:block ${scrolled ? "text-red-700" : "text-red-200"}`}>
                   Reunite • Recover • Restore
                 </span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Link
-                to="/"
-                className="px-4 py-2 rounded-full border border-red-300/60 text-red-100 hover:bg-white/10 hover:text-white font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+              <button
+                onClick={() => navigate("/")}
+                className={`px-4 py-2 rounded-full border border-red-300/60 font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 ${scrolled ? "text-red-900 hover:bg-red-50" : "text-red-100 hover:bg-white/10 hover:text-white"}`}
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Home</span>
-              </Link>
+              </button>
             </div>
           </nav>
         </div>
@@ -157,111 +105,9 @@ export default function Contact() {
 
       {/* Contact Section */}
       <section className="py-20 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12">
-            {/* Contact Form */}
-            <div>
-              <h2 className="text-3xl font-bold mb-6 text-gray-900">Send us a Message</h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {success && (
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <p className="text-green-800">Message sent successfully! We'll get back to you soon.</p>
-                  </div>
-                )}
-                {error && (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                    <p className="text-red-800">{error}</p>
-                  </div>
-                )}
-                
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Your Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                    placeholder="John Doe"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                    placeholder="john@example.com"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject *
-                  </label>
-                  <input
-                    type="text"
-                    id="subject"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                    placeholder="How can we help?"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                    Message *
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    required
-                    rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all resize-none"
-                    placeholder="Tell us more about your inquiry..."
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-red-900 text-white px-6 py-4 rounded-lg font-semibold hover:bg-red-800 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Sending...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      <span>Send Message</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-            {/* Contact Information */}
-            <div>
+        <div className="max-w-4xl mx-auto">
+          {/* Contact Information */}
+          <div>
               <h2 className="text-3xl font-bold mb-6 text-gray-900">Contact Information</h2>
               <p className="text-gray-600 mb-8 leading-relaxed">
                 Reach out to us through any of these channels. We typically respond within 24 hours.
@@ -332,7 +178,6 @@ export default function Contact() {
                   <span className="ml-2">→</span>
                 </Link>
               </div>
-            </div>
           </div>
         </div>
       </section>

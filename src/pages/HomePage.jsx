@@ -240,10 +240,10 @@ export default function HomePage() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-lg sm:text-xl font-bold text-white tracking-tight group-hover:text-red-50 transition-colors duration-300">
+                <span className={`text-lg sm:text-xl font-bold tracking-tight group-hover:text-red-50 transition-colors duration-300 ${scrolled ? "text-red-900" : "text-white"}`}>
                   FoundCloud
                 </span>
-                <span className="text-[10px] sm:text-xs text-red-200 font-medium opacity-80 hidden sm:block">
+                <span className={`text-[10px] sm:text-xs font-medium opacity-80 hidden sm:block ${scrolled ? "text-red-700" : "text-red-200"}`}>
                   Reunite • Recover • Restore
                 </span>
               </div>
@@ -252,23 +252,23 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-3 py-2 text-red-100 hover:text-white transition-all duration-300 font-medium rounded-full hover:bg-white/10 relative group text-sm"
+                className={`px-3 py-2 transition-all duration-300 font-medium rounded-full hover:bg-white/10 relative group text-sm ${scrolled ? "text-red-900 hover:text-red-800" : "text-red-100 hover:text-white"}`}
               >
                 <span className="relative z-10">Features</span>
                 <span className="absolute inset-x-3 bottom-1 h-0.5 bg-gradient-to-r from-red-300 to-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full"></span>
               </button>
               <button
                 type="button"
-                onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-3 py-2 text-red-100 hover:text-white transition-all duration-300 font-medium rounded-full hover:bg-white/10 relative group text-sm"
+                onClick={() => navigate("/about")}
+                className={`px-3 py-2 transition-all duration-300 font-medium rounded-full hover:bg-white/10 relative group text-sm ${scrolled ? "text-red-900 hover:text-red-800" : "text-red-100 hover:text-white"}`}
               >
                 <span className="relative z-10">About</span>
                 <span className="absolute inset-x-3 bottom-1 h-0.5 bg-gradient-to-r from-red-300 to-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full"></span>
               </button>
               <button
                 type="button"
-                onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-3 py-2 text-red-100 hover:text-white transition-all duration-300 font-medium rounded-full hover:bg-white/10 relative group text-sm"
+                onClick={() => navigate("/contact")}
+                className={`px-3 py-2 transition-all duration-300 font-medium rounded-full hover:bg-white/10 relative group text-sm ${scrolled ? "text-red-900 hover:text-red-800" : "text-red-100 hover:text-white"}`}
               >
                 <span className="relative z-10">Contact</span>
                 <span className="absolute inset-x-3 bottom-1 h-0.5 bg-gradient-to-r from-red-300 to-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full"></span>
@@ -286,7 +286,7 @@ export default function HomePage() {
                 </button>
                 <button
                   onClick={handleSignOut}
-                  className="px-4 py-2 rounded-full border border-red-300/60 text-red-100 hover:bg-white/10 hover:text-white font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md"
+                  className={`px-4 py-2 rounded-full border border-red-300/60 font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md ${scrolled ? "text-red-900 hover:bg-red-50" : "text-red-100 hover:bg-white/10 hover:text-white"}`}
                 >
                   Logout
                 </button>
