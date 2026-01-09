@@ -760,18 +760,29 @@ export default function Signup() {
             )}
 
             {/* Toggle Button */}
-            <div className="mt-8 text-center">
-              <p className="text-muted-foreground text-sm mb-4">
-                {state.isSignup ? "Already have an account?" : "Don't have an account?"}
-              </p>
-              <button
-                onClick={toggleAuthMode}
-                disabled={state.loading}
-                className="text-[#850303] hover:text-[#660000] font-medium text-sm transition-colors duration-200 underline decoration-2 underline-offset-4 hover:decoration-[#660000] disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label={state.isSignup ? "Switch to Sign In" : "Switch to Sign Up"}
-              >
-                {state.isSignup ? "Sign in here" : "Create one now"}
-              </button>
+            <div className="mt-8 text-center space-y-3">
+              {!state.isSignup && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/reset-password")}
+                  className="block w-full text-[#850303] hover:text-[#660000] font-medium text-sm transition-colors duration-200"
+                >
+                  Forgot password?
+                </button>
+              )}
+              <div>
+                <p className="text-muted-foreground text-sm mb-2">
+                  {state.isSignup ? "Already have an account?" : "Don't have an account?"}
+                </p>
+                <button
+                  onClick={toggleAuthMode}
+                  disabled={state.loading}
+                  className="text-[#850303] hover:text-[#660000] font-medium text-sm transition-colors duration-200 underline decoration-2 underline-offset-4 hover:decoration-[#660000] disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label={state.isSignup ? "Switch to Sign In" : "Switch to Sign Up"}
+                >
+                  {state.isSignup ? "Sign in here" : "Create one now"}
+                </button>
+              </div>
             </div>
 
             {/* Footer */}

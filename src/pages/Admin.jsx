@@ -75,7 +75,8 @@ export default function Admin() {
     }
     try {
       const token = localStorage.getItem("authToken")
-      const url = `${BASE_URL}/api/admin/users`
+      // Fetch only pending users for the management table
+      const url = `${BASE_URL}/api/admin/users?status=pending`
       const response = await fetch(url, {
         method: "GET",
         headers: { 
@@ -711,6 +712,40 @@ export default function Admin() {
                                   </button>
                                 </>
                               )}
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const token = localStorage.getItem("authToken")
+                                    const userId = u._id || u.id
+                                    const res = await fetch(
+                                      `${BASE_URL}/api/admin/users/${userId}/password-reset-token`,
+                                      {
+                                        method: "POST",
+                                        headers: {
+                                          Authorization: `Bearer ${token}`,
+                                          "Content-Type": "application/json",
+                                          Accept: "application/json",
+                                        },
+                                        mode: "cors",
+                                      }
+                                    )
+                                    const data = await res.json().catch(() => ({}))
+                                    if (!res.ok) {
+                                      throw new Error(data.message || "Failed to send reset email")
+                                    }
+                                    alert(
+                                      data.message ||
+                                        `Password reset email sent to ${u.email}.`
+                                    )
+                                  } catch (err) {
+                                    console.error("Error sending reset email:", err)
+                                    alert(err.message || "Error sending reset email")
+                                  }
+                                }}
+                                className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition"
+                              >
+                                Send reset email
+                              </button>
                               <button
                                 onClick={() => handleDeleteClick(u)}
                                 className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition"
