@@ -537,6 +537,18 @@ export default function Admin() {
             </button>
 
             <button
+              onClick={() => setView("passwordResets")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                view === "passwordResets"
+                  ? "bg-red-900 text-white shadow-md"
+                  : "text-gray-700 hover:bg-red-50 hover:text-red-900"
+              }`}
+            >
+              <Lock className="w-5 h-5" />
+              <span>Password Resets</span>
+            </button>
+
+            <button
               onClick={() => setView("verificationCodes")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 view === "verificationCodes"
@@ -774,6 +786,40 @@ export default function Admin() {
                                   </button>
                                 </>
                               )}
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const token = localStorage.getItem("authToken")
+                                    const userId = u._id || u.id
+                                    const res = await fetch(
+                                      `${BASE_URL}/api/admin/users/${userId}/password-reset-token`,
+                                      {
+                                        method: "POST",
+                                        headers: {
+                                          Authorization: `Bearer ${token}`,
+                                          "Content-Type": "application/json",
+                                          Accept: "application/json",
+                                        },
+                                        mode: "cors",
+                                      }
+                                    )
+                                    const data = await res.json().catch(() => ({}))
+                                    if (!res.ok) {
+                                      throw new Error(data.message || "Failed to send reset email")
+                                    }
+                                    alert(
+                                      data.message ||
+                                        `Password reset email sent to ${u.email}.`
+                                    )
+                                  } catch (err) {
+                                    console.error("Error sending reset email:", err)
+                                    alert(err.message || "Error sending reset email")
+                                  }
+                                }}
+                                className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition"
+                              >
+                                Send reset email
+                              </button>
                               <button
                                 onClick={() => handleDeleteClick(u)}
                                 className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition"
