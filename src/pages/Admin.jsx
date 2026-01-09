@@ -13,7 +13,8 @@ import {
   LogOut,
   Home,
   RefreshCw,
-  Lock
+  Lock,
+  Mail
 } from "lucide-react"
 
 const LOGO_SRC = "/foundcloud white.svg"
@@ -33,6 +34,7 @@ export default function Admin() {
   const [verificationCodes, setVerificationCodes] = useState([])
   const [allUsers, setAllUsers] = useState([]) // For password resets tab
   const [passwordResetTokens, setPasswordResetTokens] = useState([]) // Store generated tokens
+  const [resetRequestEmails, setResetRequestEmails] = useState([]) // Track users who requested password resets
   const [loading, setLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [userToDelete, setUserToDelete] = useState(null)
@@ -91,8 +93,8 @@ export default function Admin() {
     }
     try {
       const token = localStorage.getItem("authToken")
-      // Fetch only pending users for the management table
-      const url = `${BASE_URL}/api/admin/users?status=pending`
+      // Fetch all users for the management table
+      const url = `${BASE_URL}/api/admin/users`
       const response = await fetch(url, {
         method: "GET",
         headers: { 
@@ -145,6 +147,10 @@ export default function Admin() {
       } else {
         console.error("Error fetching all users:", response.status, response.statusText)
       }
+      
+      // Load reset requests from localStorage (set by ResetPassword page)
+      const resetRequests = JSON.parse(localStorage.getItem("passwordResetRequests") || "[]")
+      setResetRequestEmails(resetRequests)
     } catch (error) {
       console.error("Error fetching all users:", error)
       if (error.message.includes("Failed to fetch") || error.message.includes("CORS")) {
@@ -843,7 +849,7 @@ export default function Admin() {
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-3xl font-bold text-black mb-2">Password Reset Requests</h2>
-                <p className="text-gray-600">Generate password reset tokens for users who forgot their password</p>
+                <p className="text-gray-600">View users who requested password resets and send reset codes</p>
               </div>
               <button
                 onClick={fetchAllUsers}
@@ -854,6 +860,22 @@ export default function Admin() {
                 Refresh
               </button>
             </div>
+
+            {/* Display users who requested password resets */}
+            {resetRequestEmails.length > 0 && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-black mb-3">Users Who Requested Password Resets:</h3>
+                <div className="space-y-2">
+                  {resetRequestEmails.map((email, index) => (
+                    <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border border-blue-100">
+                      <Mail className="w-4 h-4 text-blue-600" />
+                      <span className="text-gray-800 font-medium">{email}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
@@ -870,16 +892,12 @@ export default function Admin() {
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Role</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Reset Code</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {allUsers.map((u) => {
                       const status = u.status || "pending"
-                      const resetToken = passwordResetTokens.find(
-                        (token) => token.userId === (u._id || u.id)
-                      )
                       return (
                         <tr key={u._id || u.id} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-3 px-4">{u.name}</td>
@@ -907,32 +925,6 @@ export default function Admin() {
                             </span>
                           </td>
                           <td className="py-3 px-4">
-                            {resetToken ? (
-                              <div className="flex items-center gap-2">
-                                <code className="px-3 py-1 bg-gray-100 rounded text-sm font-mono text-gray-800">
-                                  {resetToken.code || resetToken.token || "N/A"}
-                                </code>
-                                <button
-                                  onClick={() => {
-                                    const codeToCopy = resetToken.code || resetToken.token || ""
-                                    if (codeToCopy) {
-                                      navigator.clipboard.writeText(codeToCopy)
-                                      alert("Reset code copied to clipboard!")
-                                    }
-                                  }}
-                                  className="text-gray-500 hover:text-gray-700 transition-colors"
-                                  title="Copy code"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                  </svg>
-                                </button>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 text-sm">No code generated</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">
                             <button
                               onClick={async () => {
                                 try {
@@ -952,38 +944,27 @@ export default function Admin() {
                                   )
                                   const data = await res.json().catch(() => ({}))
                                   if (!res.ok) {
-                                    throw new Error(data.message || "Failed to generate reset token")
+                                    throw new Error(data.message || "Failed to send reset code")
                                   }
-                                  // Store the generated token (if returned by backend)
-                                  // Note: The backend sends the token via email, but we'll show a success message
-                                  // If the backend returns the token in the response, we can store it
-                                  if (data.token || data.code) {
-                                    setPasswordResetTokens((prev) => {
-                                      const existing = prev.filter((t) => t.userId !== userId)
-                                      return [
-                                        ...existing,
-                                        {
-                                          userId: userId,
-                                          code: data.code || data.token,
-                                          token: data.token || data.code,
-                                          email: u.email,
-                                          generatedAt: new Date().toISOString(),
-                                        },
-                                      ]
-                                    })
-                                  }
+                                  // Add user's email to the reset requests list
+                                  setResetRequestEmails((prev) => {
+                                    if (!prev.includes(u.email)) {
+                                      return [...prev, u.email]
+                                    }
+                                    return prev
+                                  })
                                   alert(
                                     data.message ||
-                                      `Password reset token generated and sent to ${u.email}. The user can use the code from their email to reset their password.`
+                                      `Password reset code sent to ${u.email}.`
                                   )
                                 } catch (err) {
-                                  console.error("Error generating reset token:", err)
-                                  alert(err.message || "Error generating reset token")
+                                  console.error("Error sending reset code:", err)
+                                  alert(err.message || "Error sending reset code")
                                 }
                               }}
                               className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition"
                             >
-                              Generate Reset Code
+                              Send Code
                             </button>
                           </td>
                         </tr>

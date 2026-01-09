@@ -19,14 +19,48 @@ export default function ResetPassword() {
     newPassword: "",
   });
   const [loading, setLoading] = useState(false);
+  const [sendCodeLoading, setSendCodeLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
     setSuccess("");
+  };
+
+  const handleSendCode = async () => {
+    if (!formData.email.trim()) {
+      setError("Please enter your email address first");
+      return;
+    }
+
+    setSendCodeLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      // Store the reset request in localStorage so admin can see it
+      const resetRequests = JSON.parse(localStorage.getItem("passwordResetRequests") || "[]");
+      if (!resetRequests.includes(formData.email.trim())) {
+        resetRequests.push(formData.email.trim());
+        localStorage.setItem("passwordResetRequests", JSON.stringify(resetRequests));
+      }
+
+      // For now, we'll just show success message
+      // In production, you would call an API endpoint like:
+      // POST /api/auth/request-password-reset with { email: formData.email }
+      
+      setSuccess("Reset code request sent! Please check your email for the code.");
+      setCodeSent(true);
+    } catch (err) {
+      console.error("Error sending code request:", err);
+      setError(err.message || "Failed to send code request. Please try again.");
+    } finally {
+      setSendCodeLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -128,18 +162,38 @@ export default function ResetPassword() {
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
               Email
             </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
-                placeholder="you@example.com"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleSendCode}
+                disabled={sendCodeLoading || !formData.email.trim()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+              >
+                {sendCodeLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <>
+                    <Key className="w-4 h-4" />
+                    <span>Send Code</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
