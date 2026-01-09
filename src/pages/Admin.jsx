@@ -12,7 +12,8 @@ import {
   Key,
   LogOut,
   Home,
-  RefreshCw
+  RefreshCw,
+  Lock
 } from "lucide-react"
 
 const LOGO_SRC = "/foundcloud white.svg"
@@ -24,12 +25,14 @@ const BASE_URL =
 
 export default function Admin() {
   const [user, setUser] = useState(null)
-  const [view, setView] = useState("dashboard") // dashboard, users, foundItems, lostItems, claims, verificationCodes
+  const [view, setView] = useState("dashboard") // dashboard, users, passwordResets, foundItems, lostItems, claims, verificationCodes
   const [users, setUsers] = useState([])
   const [foundItems, setFoundItems] = useState([])
   const [lostItems, setLostItems] = useState([])
   const [claims, setClaims] = useState([])
   const [verificationCodes, setVerificationCodes] = useState([])
+  const [allUsers, setAllUsers] = useState([]) // For password resets tab
+  const [passwordResetTokens, setPasswordResetTokens] = useState([]) // Store generated tokens
   const [loading, setLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [userToDelete, setUserToDelete] = useState(null)
@@ -67,6 +70,8 @@ export default function Admin() {
       fetchLostItems()
     } else if (view === "users") {
       fetchUsers()
+    } else if (view === "passwordResets") {
+      fetchAllUsers()
     } else if (view === "foundItems") {
       fetchFoundItems()
     } else if (view === "lostItems") {
@@ -114,6 +119,39 @@ export default function Admin() {
       if (view !== "dashboard") {
         setLoading(false)
       }
+    }
+  }
+
+  const fetchAllUsers = async () => {
+    setLoading(true)
+    try {
+      const token = localStorage.getItem("authToken")
+      // Fetch all users for password reset management
+      const url = `${BASE_URL}/api/admin/users`
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        mode: "cors",
+      })
+      if (response.ok) {
+        const data = await response.json()
+        // Filter out admin users
+        const filteredUsers = (data.users || []).filter((u) => u.role !== "admin")
+        setAllUsers(filteredUsers)
+      } else {
+        console.error("Error fetching all users:", response.status, response.statusText)
+      }
+    } catch (error) {
+      console.error("Error fetching all users:", error)
+      if (error.message.includes("Failed to fetch") || error.message.includes("CORS")) {
+        console.error("CORS Error: Backend needs to allow requests from:", window.location.origin)
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -737,46 +775,170 @@ export default function Admin() {
                                 </>
                               )}
                               <button
-                                onClick={async () => {
-                                  try {
-                                    const token = localStorage.getItem("authToken")
-                                    const userId = u._id || u.id
-                                    const res = await fetch(
-                                      `${BASE_URL}/api/admin/users/${userId}/password-reset-token`,
-                                      {
-                                        method: "POST",
-                                        headers: {
-                                          Authorization: `Bearer ${token}`,
-                                          "Content-Type": "application/json",
-                                          Accept: "application/json",
-                                        },
-                                        mode: "cors",
-                                      }
-                                    )
-                                    const data = await res.json().catch(() => ({}))
-                                    if (!res.ok) {
-                                      throw new Error(data.message || "Failed to send reset email")
-                                    }
-                                    alert(
-                                      data.message ||
-                                        `Password reset email sent to ${u.email}.`
-                                    )
-                                  } catch (err) {
-                                    console.error("Error sending reset email:", err)
-                                    alert(err.message || "Error sending reset email")
-                                  }
-                                }}
-                                className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition"
-                              >
-                                Send reset email
-                              </button>
-                              <button
                                 onClick={() => handleDeleteClick(u)}
                                 className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition"
                               >
                                 Remove
                               </button>
                             </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+            )}
+
+            {view === "passwordResets" && (
+          <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-3xl font-bold text-black mb-2">Password Reset Requests</h2>
+                <p className="text-gray-600">Generate password reset tokens for users who forgot their password</p>
+              </div>
+              <button
+                onClick={fetchAllUsers}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
+                disabled={loading}
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                Refresh
+              </button>
+            </div>
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading users...</p>
+              </div>
+            ) : allUsers.length === 0 ? (
+              <p className="text-center py-12 text-gray-600">No users found</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Name</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Role</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Reset Code</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allUsers.map((u) => {
+                      const status = u.status || "pending"
+                      const resetToken = passwordResetTokens.find(
+                        (token) => token.userId === (u._id || u.id)
+                      )
+                      return (
+                        <tr key={u._id || u.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">{u.name}</td>
+                          <td className="py-3 px-4">{u.email}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              u.role === "admin" ? "bg-red-100 text-red-800" :
+                              u.role === "staff" ? "bg-green-100 text-green-800" :
+                              "bg-blue-100 text-blue-800"
+                            }`}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                status === "approved"
+                                  ? "bg-green-100 text-green-800"
+                                  : status === "rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                              }`}
+                            >
+                              {status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            {resetToken ? (
+                              <div className="flex items-center gap-2">
+                                <code className="px-3 py-1 bg-gray-100 rounded text-sm font-mono text-gray-800">
+                                  {resetToken.code || resetToken.token || "N/A"}
+                                </code>
+                                <button
+                                  onClick={() => {
+                                    const codeToCopy = resetToken.code || resetToken.token || ""
+                                    if (codeToCopy) {
+                                      navigator.clipboard.writeText(codeToCopy)
+                                      alert("Reset code copied to clipboard!")
+                                    }
+                                  }}
+                                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                                  title="Copy code"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 text-sm">No code generated</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const token = localStorage.getItem("authToken")
+                                  const userId = u._id || u.id
+                                  const res = await fetch(
+                                    `${BASE_URL}/api/admin/users/${userId}/password-reset-token`,
+                                    {
+                                      method: "POST",
+                                      headers: {
+                                        Authorization: `Bearer ${token}`,
+                                        "Content-Type": "application/json",
+                                        Accept: "application/json",
+                                      },
+                                      mode: "cors",
+                                    }
+                                  )
+                                  const data = await res.json().catch(() => ({}))
+                                  if (!res.ok) {
+                                    throw new Error(data.message || "Failed to generate reset token")
+                                  }
+                                  // Store the generated token (if returned by backend)
+                                  // Note: The backend sends the token via email, but we'll show a success message
+                                  // If the backend returns the token in the response, we can store it
+                                  if (data.token || data.code) {
+                                    setPasswordResetTokens((prev) => {
+                                      const existing = prev.filter((t) => t.userId !== userId)
+                                      return [
+                                        ...existing,
+                                        {
+                                          userId: userId,
+                                          code: data.code || data.token,
+                                          token: data.token || data.code,
+                                          email: u.email,
+                                          generatedAt: new Date().toISOString(),
+                                        },
+                                      ]
+                                    })
+                                  }
+                                  alert(
+                                    data.message ||
+                                      `Password reset token generated and sent to ${u.email}. The user can use the code from their email to reset their password.`
+                                  )
+                                } catch (err) {
+                                  console.error("Error generating reset token:", err)
+                                  alert(err.message || "Error generating reset token")
+                                }
+                              }}
+                              className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition"
+                            >
+                              Generate Reset Code
+                            </button>
                           </td>
                         </tr>
                       )
