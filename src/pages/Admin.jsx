@@ -454,7 +454,7 @@ export default function Admin() {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/admin")}
                 className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
               >
                 <Home className="w-5 h-5" />
