@@ -281,6 +281,10 @@ export default function Signup() {
         throw new Error("Invalid role in payload")
       }
 
+      // Add timeout to prevent infinite loading
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+
       let response
       try {
         response = await fetch(endpoint, {
@@ -291,8 +295,15 @@ export default function Signup() {
             "Accept": "application/json"
           },
           body: JSON.stringify(payload),
+          signal: controller.signal,
         })
+        clearTimeout(timeoutId)
       } catch (fetchError) {
+        clearTimeout(timeoutId)
+        // Check if it's an abort error (timeout)
+        if (fetchError.name === "AbortError" || fetchError.message === "AbortError") {
+          throw new Error("Request timed out. Please check your connection and try again.")
+        }
         // Network error or CORS error - fetch fails before getting a response
         console.error("Fetch error (network/CORS):", fetchError)
         if (fetchError.message && (fetchError.message.includes("Failed to fetch") || fetchError.message.includes("blocked"))) {
