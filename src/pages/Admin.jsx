@@ -3,6 +3,17 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
+import {
+  LayoutDashboard,
+  Users,
+  Package,
+  AlertCircle,
+  FileCheck,
+  Key,
+  LogOut,
+  Home,
+  RefreshCw
+} from "lucide-react"
 
 const LOGO_SRC = "/foundcloud white.svg"
 
@@ -390,36 +401,32 @@ export default function Admin() {
       <div className="absolute top-1/3 right-1/4 w-16 h-16 bg-red-400 rounded-full opacity-40 animate-ping"></div>
       <div className="absolute inset-0 bg-[#850303]/10 blur-3xl -z-10"></div>
 
-      {/* Header with Logout */}
+      {/* Header */}
       <div className="bg-gradient-to-r from-red-900 to-red-800 text-white shadow-lg relative z-20">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center gap-3">
-                <div className="h-16 w-16">
-                  <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-contain" loading="lazy" />
-                </div>
-                <span className="text-xl font-bold tracking-tight">FoundCloud</span>
+            <div className="flex items-center space-x-4">
+              <div className="h-12 w-12">
+                <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-contain" loading="lazy" />
               </div>
-              <button
-                onClick={() => navigate("/")}
-                className="flex items-center gap-2 hover:text-red-200 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                <span className="font-medium">Home</span>
-              </button>
+              <div>
+                <h1 className="text-xl font-bold">Admin Portal</h1>
+                <p className="text-sm text-red-200">Welcome, {user?.name || "Admin"}</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="hidden sm:inline text-red-200">Welcome, {user?.name || "Admin"}</span>
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <Home className="w-5 h-5" />
+                <span className="font-medium">Home</span>
+              </button>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 bg-white text-red-900 rounded-lg font-semibold hover:bg-red-50 transition-all duration-200 shadow-md hover:shadow-lg"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
+                <LogOut className="w-5 h-5" />
                 Logout
               </button>
             </div>
@@ -427,24 +434,95 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-12 relative z-10">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-black">Admin Portal</h1>
-            <p className="text-gray-600 mt-2">Manage the platform below.</p>
-          </div>
-          {view !== "dashboard" && (
+      <div className="flex h-[calc(100vh-80px)] relative z-10">
+        {/* Sidebar */}
+        <aside className="w-64 bg-white border-r border-gray-200 shadow-lg flex flex-col">
+          <nav className="flex-1 p-4 space-y-2">
             <button
               onClick={() => setView("dashboard")}
-              className="px-4 py-2 rounded-lg bg-[#850303] text-white font-medium hover:opacity-90 transition"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                view === "dashboard"
+                  ? "bg-red-900 text-white shadow-md"
+                  : "text-gray-700 hover:bg-red-50 hover:text-red-900"
+              }`}
             >
-              Back to Dashboard
+              <LayoutDashboard className="w-5 h-5" />
+              <span>Dashboard</span>
             </button>
-          )}
-        </div>
 
-            {view === "dashboard" ? (
+            <button
+              onClick={() => setView("users")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                view === "users"
+                  ? "bg-red-900 text-white shadow-md"
+                  : "text-gray-700 hover:bg-red-50 hover:text-red-900"
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              <span>Users</span>
+            </button>
+
+            <button
+              onClick={() => setView("foundItems")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                view === "foundItems"
+                  ? "bg-red-900 text-white shadow-md"
+                  : "text-gray-700 hover:bg-red-50 hover:text-red-900"
+              }`}
+            >
+              <Package className="w-5 h-5" />
+              <span>Found Items</span>
+            </button>
+
+            <button
+              onClick={() => setView("lostItems")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                view === "lostItems"
+                  ? "bg-red-900 text-white shadow-md"
+                  : "text-gray-700 hover:bg-red-50 hover:text-red-900"
+              }`}
+            >
+              <AlertCircle className="w-5 h-5" />
+              <span>Lost Items</span>
+            </button>
+
+            <button
+              onClick={() => setView("claims")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                view === "claims"
+                  ? "bg-red-900 text-white shadow-md"
+                  : "text-gray-700 hover:bg-red-50 hover:text-red-900"
+              }`}
+            >
+              <FileCheck className="w-5 h-5" />
+              <span>Claims</span>
+            </button>
+
+            <button
+              onClick={() => setView("verificationCodes")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                view === "verificationCodes"
+                  ? "bg-red-900 text-white shadow-md"
+                  : "text-gray-700 hover:bg-red-50 hover:text-red-900"
+              }`}
+            >
+              <Key className="w-5 h-5" />
+              <span>Verification Codes</span>
+            </button>
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto bg-red-50">
+          <div className="p-6">
+
+            {view === "dashboard" && (
           <>
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-black mb-2">Dashboard Overview</h2>
+              <p className="text-gray-600">Welcome to the admin control panel</p>
+            </div>
+
             {/* Stats Cards */}
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-8">
               <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
@@ -506,78 +584,24 @@ export default function Admin() {
               </div>
             </div>
 
-            {/* Management Cards */}
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-              <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-black mb-2">Users Management</h2>
-                <p className="text-gray-600 mb-4">View and manage registered users, change roles, and manage permissions.</p>
-                <button 
-                  onClick={() => setView("users")}
-                  className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
-                >
-                  Manage Users
-                </button>
-              </div>
-
-              <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-black mb-2">Found Items</h2>
-                <p className="text-gray-600 mb-4">Audit and moderate reported found items. Approve or reject claims.</p>
-                <button 
-                  onClick={() => setView("foundItems")}
-                  className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
-                >
-                  View Found Items
-                </button>
-              </div>
-
-              <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-black mb-2">Lost Items</h2>
-                <p className="text-gray-600 mb-4">Audit and moderate reported lost items. Track and match with found items.</p>
-                <button 
-                  onClick={() => setView("lostItems")}
-                  className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
-                >
-                  View Lost Items
-                </button>
-              </div>
-
-              <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-black mb-2">Claims</h2>
-                <p className="text-gray-600 mb-4">View and manage item claims. Approve or reject user claims.</p>
-                <button 
-                  onClick={() => setView("claims")}
-                  className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
-                >
-                  View Claims
-                </button>
-              </div>
-
-              <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6 hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-black mb-2">Verification Codes</h2>
-                <p className="text-gray-600 mb-4">Generate and manage verification codes for security officer registration.</p>
-                <button 
-                  onClick={() => setView("verificationCodes")}
-                  className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
-                >
-                  Manage Codes
-                </button>
-              </div>
-
-            </div>
           </>
-        ) : view === "users" ? (
+            )}
+
+            {view === "users" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-black">Users Management</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={fetchUsers}
-                  className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
-                  disabled={loading}
-                >
-                  Refresh
-                </button>
+              <div>
+                <h2 className="text-3xl font-bold text-black mb-2">Users Management</h2>
+                <p className="text-gray-600">Manage and approve pending user accounts</p>
               </div>
+              <button
+                onClick={fetchUsers}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
+                disabled={loading}
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                Refresh
+              </button>
             </div>
             {loading ? (
               <div className="text-center py-12">
@@ -762,9 +786,14 @@ export default function Admin() {
               </div>
             )}
           </div>
-        ) : view === "foundItems" ? (
+            )}
+
+            {view === "foundItems" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-            <h2 className="text-2xl font-bold text-black mb-6">Found Items</h2>
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-black mb-2">Found Items</h2>
+              <p className="text-gray-600">Audit and moderate reported found items</p>
+            </div>
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
@@ -798,9 +827,14 @@ export default function Admin() {
               </div>
             )}
           </div>
-        ) : view === "lostItems" ? (
+            )}
+
+            {view === "lostItems" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-            <h2 className="text-2xl font-bold text-black mb-6">Lost Items</h2>
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-black mb-2">Lost Items</h2>
+              <p className="text-gray-600">Audit and moderate reported lost items</p>
+            </div>
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
@@ -834,9 +868,14 @@ export default function Admin() {
               </div>
             )}
           </div>
-        ) : view === "claims" ? (
+            )}
+
+            {view === "claims" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-            <h2 className="text-2xl font-bold text-black mb-6">Claims</h2>
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-black mb-2">Claims</h2>
+              <p className="text-gray-600">View and manage item claims</p>
+            </div>
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
@@ -941,10 +980,15 @@ export default function Admin() {
               </div>
             )}
           </div>
-        ) : view === "verificationCodes" ? (
+            )}
+
+            {view === "verificationCodes" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-black">Verification Codes</h2>
+              <div>
+                <h2 className="text-3xl font-bold text-black mb-2">Verification Codes</h2>
+                <p className="text-gray-600">Generate and manage verification codes for security officers</p>
+              </div>
               <button
                 onClick={generateVerificationCode}
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#850303] to-[#700202] text-white text-sm font-semibold hover:from-[#700202] hover:to-[#5a0101] transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
@@ -1045,7 +1089,10 @@ export default function Admin() {
               </div>
             )}
           </div>
-        ) : null}
+            )}
+          </div>
+        </main>
+      </div>
 
         {/* Generated Code Modal */}
         {showCodeModal && generatedCode && (typeof generatedCode === "string" || (generatedCode && typeof generatedCode === "object" && generatedCode.code)) && (
