@@ -1094,7 +1094,7 @@ export default function Admin() {
         </main>
       </div>
 
-        {/* Generated Code Modal */}
+      {/* Generated Code Modal */}
         {showCodeModal && generatedCode && (typeof generatedCode === "string" || (generatedCode && typeof generatedCode === "object" && generatedCode.code)) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
@@ -1207,7 +1207,6 @@ export default function Admin() {
           </div>
         )}
 
-      </div>
     </div>
   )
 }
