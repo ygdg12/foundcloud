@@ -329,10 +329,12 @@ export default function Signup() {
 
           // Redirect pending users to dedicated info page
           if (lowerMessage.includes("pending")) {
+            dispatch({ type: "SET_STATUS", field: "loading", value: false })
             navigate("/pending-approval", {
               replace: true,
               state: { status: "pending", message: data?.message },
             })
+            return
           } else if (lowerMessage.includes("rejected")) {
             // For rejected, keep them on the login page with a clear error
             // (Spec allows either behavior; here we show a blocking alert on login)
@@ -394,6 +396,9 @@ export default function Signup() {
         localStorage.removeItem("authToken")
         localStorage.removeItem("user")
 
+        // Clear loading state before navigation
+        dispatch({ type: "SET_STATUS", field: "loading", value: false })
+        
         // Send user back to login with a friendly info message
         setTimeout(() => {
           navigate("/signin", {
@@ -444,6 +449,7 @@ export default function Signup() {
         console.log("Signin: Redirecting to:", redirectPath)
 
         dispatch({ type: "SET_STATUS", field: "success", value: data.message || "Sign in successful" })
+        dispatch({ type: "SET_STATUS", field: "loading", value: false })
 
         // Wait for AuthContext to update
         setTimeout(() => {
