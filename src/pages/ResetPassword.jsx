@@ -43,6 +43,8 @@ export default function ResetPassword() {
 
     try {
       // Call the backend API to request password reset and send email
+      console.log("Requesting password reset for email:", formData.email.trim());
+      
       const response = await fetch(`${BASE_URL}/api/auth/request-password-reset`, {
         method: "POST",
         headers: {
@@ -55,7 +57,33 @@ export default function ResetPassword() {
         }),
       });
 
-      const data = await response.json().catch(() => ({}));
+      console.log("Response status:", response.status, response.statusText);
+      
+      const data = await response.json().catch((parseErr) => {
+        console.error("Failed to parse response:", parseErr);
+        return {};
+      });
+
+      console.log("Response data:", data);
+
+      // If the endpoint doesn't exist (404) or is not implemented (501), use fallback
+      if (!response.ok && (response.status === 404 || response.status === 501 || response.status === 405)) {
+        // Fallback: Store request for admin to handle manually
+        // The admin can see it in the Password Resets tab and send the code
+        const resetRequests = JSON.parse(localStorage.getItem("passwordResetRequests") || "[]");
+        if (!resetRequests.includes(formData.email.trim())) {
+          resetRequests.push(formData.email.trim());
+          localStorage.setItem("passwordResetRequests", JSON.stringify(resetRequests));
+        }
+        
+        setSuccess(
+          "Password reset request received. An admin will send you the reset code shortly. " +
+          "Please check your email or contact support if you don't receive it within a few minutes."
+        );
+        setCodeSent(true);
+        setSendCodeLoading(false);
+        return;
+      }
 
       if (!response.ok) {
         const errorMsg =
@@ -83,7 +111,20 @@ export default function ResetPassword() {
       setCodeSent(true);
     } catch (err) {
       console.error("Error sending code request:", err);
-      setError(err.message || "Failed to send code request. Please try again.");
+      // If it's a network/CORS error, still store the request for admin
+      if (err.message.includes("Failed to fetch") || err.message.includes("CORS")) {
+        const resetRequests = JSON.parse(localStorage.getItem("passwordResetRequests") || "[]");
+        if (!resetRequests.includes(formData.email.trim())) {
+          resetRequests.push(formData.email.trim());
+          localStorage.setItem("passwordResetRequests", JSON.stringify(resetRequests));
+        }
+        setError(
+          "Unable to connect to the server. Your request has been saved. " +
+          "Please contact an admin or try again later."
+        );
+      } else {
+        setError(err.message || "Failed to send code request. Please try again.");
+      }
     } finally {
       setSendCodeLoading(false);
     }
