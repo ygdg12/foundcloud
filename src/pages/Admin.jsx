@@ -14,7 +14,9 @@ import {
   Home,
   RefreshCw,
   Lock,
-  Mail
+  Mail,
+  Menu,
+  X
 } from "lucide-react"
 
 const LOGO_SRC = "/foundcloud white.svg"
@@ -42,6 +44,7 @@ export default function Admin() {
   const [generatedCode, setGeneratedCode] = useState(null)
   const [codeToDelete, setCodeToDelete] = useState(null)
   const [showDeleteCodeModal, setShowDeleteCodeModal] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile sidebar toggle
   const navigate = useNavigate()
   const { user: authUser, isAuthenticated, loading: authLoading } = useAuth()
 
@@ -447,31 +450,39 @@ export default function Admin() {
 
       {/* Header */}
       <div className="bg-gradient-to-r from-red-900 to-red-800 text-white shadow-lg relative z-20">
-        <div className="px-6 py-4">
+        <div className="px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="h-12 w-12">
+            <div className="flex items-center space-x-2 md:space-x-4">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+                aria-label="Toggle menu"
+              >
+                {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+              <div className="h-10 w-10 md:h-12 md:w-12">
                 <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-contain" loading="lazy" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">Admin Portal</h1>
-                <p className="text-sm text-red-200">Welcome, {user?.name || "Admin"}</p>
+                <h1 className="text-lg md:text-xl font-bold">Admin Portal</h1>
+                <p className="text-xs md:text-sm text-red-200">Welcome, {user?.name || "Admin"}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 md:space-x-4">
               <button
                 onClick={() => navigate("/admin")}
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
               >
                 <Home className="w-5 h-5" />
                 <span className="font-medium">Home</span>
               </button>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-red-900 rounded-lg font-semibold hover:bg-red-50 transition-all duration-200 shadow-md hover:shadow-lg"
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white text-red-900 rounded-lg font-semibold hover:bg-red-50 transition-all duration-200 shadow-md hover:shadow-lg text-sm md:text-base"
               >
-                <LogOut className="w-5 h-5" />
-                Logout
+                <LogOut className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           </div>
@@ -479,11 +490,27 @@ export default function Admin() {
       </div>
 
       <div className="flex h-[calc(100vh-80px)] relative z-10">
+        {/* Mobile overlay backdrop */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-gray-200 shadow-lg flex flex-col">
-          <nav className="flex-1 p-4 space-y-2">
+        <aside
+          className={`fixed md:static inset-y-0 left-0 w-64 bg-white border-r border-gray-200 shadow-lg flex flex-col z-50 transform transition-transform duration-300 ease-in-out ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          }`}
+          style={{ top: "80px" }}
+        >
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             <button
-              onClick={() => setView("dashboard")}
+              onClick={() => {
+                setView("dashboard")
+                setSidebarOpen(false)
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 view === "dashboard"
                   ? "bg-red-900 text-white shadow-md"
@@ -495,7 +522,10 @@ export default function Admin() {
             </button>
 
             <button
-              onClick={() => setView("users")}
+              onClick={() => {
+                setView("users")
+                setSidebarOpen(false)
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 view === "users"
                   ? "bg-red-900 text-white shadow-md"
@@ -507,7 +537,10 @@ export default function Admin() {
             </button>
 
             <button
-              onClick={() => setView("foundItems")}
+              onClick={() => {
+                setView("foundItems")
+                setSidebarOpen(false)
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 view === "foundItems"
                   ? "bg-red-900 text-white shadow-md"
@@ -519,7 +552,10 @@ export default function Admin() {
             </button>
 
             <button
-              onClick={() => setView("lostItems")}
+              onClick={() => {
+                setView("lostItems")
+                setSidebarOpen(false)
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 view === "lostItems"
                   ? "bg-red-900 text-white shadow-md"
@@ -531,7 +567,10 @@ export default function Admin() {
             </button>
 
             <button
-              onClick={() => setView("claims")}
+              onClick={() => {
+                setView("claims")
+                setSidebarOpen(false)
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 view === "claims"
                   ? "bg-red-900 text-white shadow-md"
@@ -543,7 +582,10 @@ export default function Admin() {
             </button>
 
             <button
-              onClick={() => setView("passwordResets")}
+              onClick={() => {
+                setView("passwordResets")
+                setSidebarOpen(false)
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 view === "passwordResets"
                   ? "bg-red-900 text-white shadow-md"
@@ -555,7 +597,10 @@ export default function Admin() {
             </button>
 
             <button
-              onClick={() => setView("verificationCodes")}
+              onClick={() => {
+                setView("verificationCodes")
+                setSidebarOpen(false)
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 view === "verificationCodes"
                   ? "bg-red-900 text-white shadow-md"
@@ -569,14 +614,14 @@ export default function Admin() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-red-50">
-          <div className="p-6">
+        <main className="flex-1 overflow-y-auto bg-red-50 w-full md:w-auto">
+          <div className="p-4 md:p-6">
 
             {view === "dashboard" && (
           <>
-            <div className="mb-6">
-              <h2 className="text-3xl font-bold text-black mb-2">Dashboard Overview</h2>
-              <p className="text-gray-600">Welcome to the admin control panel</p>
+            <div className="mb-4 md:mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Dashboard Overview</h2>
+              <p className="text-sm md:text-base text-gray-600">Welcome to the admin control panel</p>
             </div>
 
             {/* Stats Cards */}
@@ -645,10 +690,10 @@ export default function Admin() {
 
             {view === "users" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-4">
               <div>
-                <h2 className="text-3xl font-bold text-black mb-2">Users Management</h2>
-                <p className="text-gray-600">Manage and approve pending user accounts</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Users Management</h2>
+                <p className="text-sm md:text-base text-gray-600">Manage and approve pending user accounts</p>
               </div>
               <button
                 onClick={fetchUsers}
@@ -812,10 +857,10 @@ export default function Admin() {
 
             {view === "passwordResets" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-4">
               <div>
-                <h2 className="text-3xl font-bold text-black mb-2">Password Reset Requests</h2>
-                <p className="text-gray-600">View users who requested password resets and send reset codes</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Password Reset Requests</h2>
+                <p className="text-sm md:text-base text-gray-600">View users who requested password resets and send reset codes</p>
               </div>
               <button
                 onClick={fetchAllUsers}
@@ -945,9 +990,9 @@ export default function Admin() {
 
             {view === "foundItems" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-            <div className="mb-6">
-              <h2 className="text-3xl font-bold text-black mb-2">Found Items</h2>
-              <p className="text-gray-600">Audit and moderate reported found items</p>
+            <div className="mb-4 md:mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Found Items</h2>
+              <p className="text-sm md:text-base text-gray-600">Audit and moderate reported found items</p>
             </div>
             {loading ? (
               <div className="text-center py-12">
@@ -986,9 +1031,9 @@ export default function Admin() {
 
             {view === "lostItems" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-            <div className="mb-6">
-              <h2 className="text-3xl font-bold text-black mb-2">Lost Items</h2>
-              <p className="text-gray-600">Audit and moderate reported lost items</p>
+            <div className="mb-4 md:mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Lost Items</h2>
+              <p className="text-sm md:text-base text-gray-600">Audit and moderate reported lost items</p>
             </div>
             {loading ? (
               <div className="text-center py-12">
@@ -1027,9 +1072,9 @@ export default function Admin() {
 
             {view === "claims" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-            <div className="mb-6">
-              <h2 className="text-3xl font-bold text-black mb-2">Claims</h2>
-              <p className="text-gray-600">View and manage item claims</p>
+            <div className="mb-4 md:mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Claims</h2>
+              <p className="text-sm md:text-base text-gray-600">View and manage item claims</p>
             </div>
             {loading ? (
               <div className="text-center py-12">
@@ -1139,10 +1184,10 @@ export default function Admin() {
 
             {view === "verificationCodes" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-4">
               <div>
-                <h2 className="text-3xl font-bold text-black mb-2">Verification Codes</h2>
-                <p className="text-gray-600">Generate and manage verification codes for security officers</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Verification Codes</h2>
+                <p className="text-sm md:text-base text-gray-600">Generate and manage verification codes for security officers</p>
               </div>
               <button
                 onClick={generateVerificationCode}
