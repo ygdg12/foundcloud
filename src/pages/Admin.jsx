@@ -779,6 +779,7 @@ export default function Admin() {
                                         if (!res.ok) {
                                           throw new Error(data.message || "Failed to approve user")
                                         }
+                                        alert("User approved successfully")
                                         setUsers((prev) =>
                                           prev.map((userItem) =>
                                             (userItem._id || userItem.id) === userId
@@ -797,6 +798,9 @@ export default function Admin() {
                                   </button>
                                   <button
                                     onClick={async () => {
+                                      const reason = prompt("Reason for rejection (optional):") || ""
+                                      if (reason === null) return // User cancelled
+                                      
                                       try {
                                         const token = localStorage.getItem("authToken")
                                         const userId = u._id || u.id
@@ -811,7 +815,7 @@ export default function Admin() {
                                             },
                                             mode: "cors",
                                             body: JSON.stringify({
-                                              reason: "Rejected by admin via dashboard",
+                                              reason: reason || "Rejected by admin via dashboard",
                                             }),
                                           }
                                         )
@@ -819,6 +823,7 @@ export default function Admin() {
                                         if (!res.ok) {
                                           throw new Error(data.message || "Failed to reject user")
                                         }
+                                        alert("User rejected successfully")
                                         setUsers((prev) =>
                                           prev.map((userItem) =>
                                             (userItem._id || userItem.id) === userId

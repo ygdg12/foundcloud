@@ -42,6 +42,33 @@ export default function ResetPassword() {
     setSuccess("");
 
     try {
+      // Call the backend API to request password reset and send email
+      const response = await fetch(`${BASE_URL}/api/auth/request-password-reset`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        mode: "cors",
+        body: JSON.stringify({
+          email: formData.email.trim(),
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const errorMsg =
+          data?.message ||
+          data?.error ||
+          (response.status === 404
+            ? "User not found with this email address"
+            : response.status === 400
+            ? "Invalid email address"
+            : "Failed to send reset code. Please try again.");
+        throw new Error(errorMsg);
+      }
+
       // Store the reset request in localStorage so admin can see it
       const resetRequests = JSON.parse(localStorage.getItem("passwordResetRequests") || "[]");
       if (!resetRequests.includes(formData.email.trim())) {
@@ -49,11 +76,10 @@ export default function ResetPassword() {
         localStorage.setItem("passwordResetRequests", JSON.stringify(resetRequests));
       }
 
-      // For now, we'll just show success message
-      // In production, you would call an API endpoint like:
-      // POST /api/auth/request-password-reset with { email: formData.email }
-      
-      setSuccess("Reset code request sent! Please check your email for the code.");
+      setSuccess(
+        data?.message ||
+          "Password reset code has been sent to your email. Please check your inbox and enter the code below."
+      );
       setCodeSent(true);
     } catch (err) {
       console.error("Error sending code request:", err);
