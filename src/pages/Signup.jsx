@@ -776,12 +776,12 @@ export default function Signup() {
               </div>
             )}
 
-            {/* Toggle Button */}
+            {/* Toggle / Links */}
             <div className="mt-8 text-center space-y-3">
               {!state.isSignup && (
                 <button
                   type="button"
-                  onClick={() => navigate("/reset-password")}
+                  onClick={() => navigate("/forgot-password")}
                   className="block w-full text-[#850303] hover:text-[#660000] font-medium text-sm transition-colors duration-200"
                 >
                   Forgot password?

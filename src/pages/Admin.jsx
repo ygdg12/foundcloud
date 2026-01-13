@@ -28,15 +28,14 @@ const BASE_URL =
 
 export default function Admin() {
   const [user, setUser] = useState(null)
-  const [view, setView] = useState("dashboard") // dashboard, users, passwordResets, foundItems, lostItems, claims, verificationCodes
+  const [view, setView] = useState("dashboard") // dashboard, users, resetRequests, foundItems, lostItems, claims, verificationCodes
   const [users, setUsers] = useState([])
   const [foundItems, setFoundItems] = useState([])
   const [lostItems, setLostItems] = useState([])
   const [claims, setClaims] = useState([])
   const [verificationCodes, setVerificationCodes] = useState([])
-  const [allUsers, setAllUsers] = useState([]) // For password resets tab
-  const [passwordResetTokens, setPasswordResetTokens] = useState([]) // Store generated tokens
-  const [resetRequestEmails, setResetRequestEmails] = useState([]) // Track users who requested password resets
+  const [resetRequests, setResetRequests] = useState([]) // For password reset requests tab
+  const [resetRequestsStatus, setResetRequestsStatus] = useState("pending")
   const [loading, setLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [userToDelete, setUserToDelete] = useState(null)
@@ -75,8 +74,8 @@ export default function Admin() {
       fetchLostItems()
     } else if (view === "users") {
       fetchUsers()
-    } else if (view === "passwordResets") {
-      fetchAllUsers()
+    } else if (view === "resetRequests") {
+      fetchResetRequests()
     } else if (view === "foundItems") {
       fetchFoundItems()
     } else if (view === "lostItems") {
@@ -127,12 +126,14 @@ export default function Admin() {
     }
   }
 
-  const fetchAllUsers = async () => {
+  const fetchResetRequests = async (status = resetRequestsStatus) => {
     setLoading(true)
     try {
       const token = localStorage.getItem("authToken")
-      // Fetch all users for password reset management
-      const url = `${BASE_URL}/api/admin/users`
+      let url = `${BASE_URL}/api/admin/password-reset-requests`
+      if (status) {
+        url += `?status=${encodeURIComponent(status)}`
+      }
       const response = await fetch(url, {
         method: "GET",
         headers: { 
@@ -144,18 +145,13 @@ export default function Admin() {
       })
       if (response.ok) {
         const data = await response.json()
-        // Filter out admin users
-        const filteredUsers = (data.users || []).filter((u) => u.role !== "admin")
-        setAllUsers(filteredUsers)
+        setResetRequests(data.requests || [])
       } else {
-        console.error("Error fetching all users:", response.status, response.statusText)
+        const errorData = await response.json().catch(() => ({}))
+        console.error("Error fetching password reset requests:", errorData.message || response.statusText)
       }
-      
-      // Load reset requests from localStorage (set by ResetPassword page)
-      const resetRequests = JSON.parse(localStorage.getItem("passwordResetRequests") || "[]")
-      setResetRequestEmails(resetRequests)
     } catch (error) {
-      console.error("Error fetching all users:", error)
+      console.error("Error fetching password reset requests:", error)
       if (error.message.includes("Failed to fetch") || error.message.includes("CORS")) {
         console.error("CORS Error: Backend needs to allow requests from:", window.location.origin)
       }
@@ -583,17 +579,17 @@ export default function Admin() {
 
             <button
               onClick={() => {
-                setView("passwordResets")
+                setView("resetRequests")
                 setSidebarOpen(false)
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
-                view === "passwordResets"
+                view === "resetRequests"
                   ? "bg-red-900 text-white shadow-md"
                   : "text-gray-700 hover:bg-red-50 hover:text-red-900"
               }`}
             >
               <Lock className="w-5 h-5" />
-              <span>Password Resets</span>
+              <span>Reset Requests</span>
             </button>
 
             <button
@@ -860,139 +856,6 @@ export default function Admin() {
           </div>
             )}
 
-            {view === "passwordResets" && (
-          <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-4">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Password Reset Requests</h2>
-                <p className="text-sm md:text-base text-gray-600">View users who requested password resets and send reset codes</p>
-              </div>
-              <button
-                onClick={fetchAllUsers}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
-                disabled={loading}
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-                Refresh
-              </button>
-            </div>
-
-            {/* Display users who requested password resets */}
-            {resetRequestEmails.length > 0 && (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="text-lg font-semibold text-black mb-3">Users Who Requested Password Resets:</h3>
-                <div className="space-y-2">
-                  {resetRequestEmails.map((email, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border border-blue-100">
-                      <Mail className="w-4 h-4 text-blue-600" />
-                      <span className="text-gray-800 font-medium">{email}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading users...</p>
-              </div>
-            ) : allUsers.length === 0 ? (
-              <p className="text-center py-12 text-gray-600">No users found</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Name</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Role</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allUsers.map((u) => {
-                      const status = u.status || "pending"
-                      return (
-                        <tr key={u._id || u.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 px-4">{u.name}</td>
-                          <td className="py-3 px-4">{u.email}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              u.role === "admin" ? "bg-red-100 text-red-800" :
-                              u.role === "staff" ? "bg-green-100 text-green-800" :
-                              "bg-blue-100 text-blue-800"
-                            }`}>
-                              {u.role}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                status === "approved"
-                                  ? "bg-green-100 text-green-800"
-                                  : status === "rejected"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <button
-                              onClick={async () => {
-                                try {
-                                  const token = localStorage.getItem("authToken")
-                                  const userId = u._id || u.id
-                                  const res = await fetch(
-                                    `${BASE_URL}/api/admin/users/${userId}/password-reset-token`,
-                                    {
-                                      method: "POST",
-                                      headers: {
-                                        Authorization: `Bearer ${token}`,
-                                        "Content-Type": "application/json",
-                                        Accept: "application/json",
-                                      },
-                                      mode: "cors",
-                                    }
-                                  )
-                                  const data = await res.json().catch(() => ({}))
-                                  if (!res.ok) {
-                                    throw new Error(data.message || "Failed to send reset code")
-                                  }
-                                  // Add user's email to the reset requests list
-                                  setResetRequestEmails((prev) => {
-                                    if (!prev.includes(u.email)) {
-                                      return [...prev, u.email]
-                                    }
-                                    return prev
-                                  })
-                                  alert(
-                                    data.message ||
-                                      `Password reset code sent to ${u.email}.`
-                                  )
-                                } catch (err) {
-                                  console.error("Error sending reset code:", err)
-                                  alert(err.message || "Error sending reset code")
-                                }
-                              }}
-                              className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition"
-                            >
-                              Send Code
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-            )}
-
             {view === "foundItems" && (
           <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
             <div className="mb-4 md:mb-6">
@@ -1070,6 +933,160 @@ export default function Admin() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+            )}
+
+            {view === "resetRequests" && (
+          <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-4">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Password Reset Requests</h2>
+                <p className="text-sm md:text-base text-gray-600">
+                  View password reset requests and generate reset codes for users.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <select
+                  value={resetRequestsStatus}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setResetRequestsStatus(value)
+                    fetchResetRequests(value)
+                  }}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="code_generated">Code Generated</option>
+                  <option value="completed">Completed</option>
+                  <option value="expired">Expired</option>
+                </select>
+                <button
+                  onClick={() => fetchResetRequests()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
+                  disabled={loading}
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading reset requests...</p>
+              </div>
+            ) : resetRequests.length === 0 ? (
+              <p className="text-center py-12 text-gray-600">No reset requests found</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">User</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Requested At</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resetRequests.map((req) => {
+                      const id = req._id || req.id
+                      const status = req.status || "pending"
+                      const user = req.user || {}
+                      const createdAt = req.createdAt || req.requestedAt
+                      const code = req.code || req.resetCode
+
+                      return (
+                        <tr key={id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">{user.name || "Unknown"}</td>
+                          <td className="py-3 px-4">{user.email || req.email || "Unknown"}</td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : status === "code_generated"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : status === "completed"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-sm text-gray-600">
+                            {createdAt ? new Date(createdAt).toLocaleString() : "—"}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex flex-wrap gap-2">
+                              {status === "pending" && (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const token = localStorage.getItem("authToken")
+                                      const res = await fetch(
+                                        `${BASE_URL}/api/admin/password-reset-requests/${id}/generate-code`,
+                                        {
+                                          method: "POST",
+                                          headers: {
+                                            Authorization: `Bearer ${token}`,
+                                            "Content-Type": "application/json",
+                                            Accept: "application/json",
+                                          },
+                                          mode: "cors",
+                                          body: JSON.stringify({ expiresInMinutes: 60 }),
+                                        }
+                                      )
+                                      const data = await res.json().catch(() => ({}))
+                                      if (!res.ok) {
+                                        throw new Error(data.message || "Failed to generate reset code")
+                                      }
+
+                                      const updatedReq = data.request || data
+                                      const newCode = updatedReq.code || updatedReq.resetCode
+                                      if (newCode) {
+                                        alert(`Reset code for ${user.email || req.email}: ${newCode}`)
+                                      } else {
+                                        alert("Reset code generated successfully.")
+                                      }
+
+                                      setResetRequests((prev) =>
+                                        prev.map((r) => ( (r._id || r.id) === id ? { ...r, ...updatedReq } : r ))
+                                      )
+                                    } catch (err) {
+                                      console.error("Error generating reset code:", err)
+                                      alert(err.message || "Error generating reset code")
+                                    }
+                                  }}
+                                  className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition"
+                                >
+                                  Generate Code
+                                </button>
+                              )}
+                              {code && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(code)
+                                    alert("Reset code copied to clipboard")
+                                  }}
+                                  className="px-3 py-1 rounded-lg bg-gray-200 text-gray-800 text-xs font-medium hover:bg-gray-300 transition"
+                                >
+                                  Copy Code
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

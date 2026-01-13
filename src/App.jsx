@@ -13,6 +13,7 @@ import PendingApprovalPage from "./pages/PendingApproval.jsx";
 import AboutUs from "./pages/AboutUs.jsx";
 import Contact from "./pages/Contact.jsx";
 import CustomerSupport from "./pages/CustomerSupport.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 
 function App() {
@@ -93,6 +94,7 @@ function App() {
           <Route path="/about" element={<AboutUs />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/support" element={<CustomerSupport />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Catch all route */}

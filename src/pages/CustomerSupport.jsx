@@ -61,7 +61,7 @@ export default function CustomerSupport() {
         },
         {
           q: "How do I reset my password?",
-          a: "Click 'Forgot Password' on the sign-in page, enter your email, and follow the instructions sent to your inbox."
+          a: "If you need to change your password, please contact customer support or your campus IT help desk. They will verify your identity and help you update your credentials."
         },
         {
           q: "Is my personal information secure?",

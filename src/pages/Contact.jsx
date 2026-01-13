@@ -28,19 +28,19 @@ export default function Contact() {
     {
       icon: Mail,
       title: "Email",
-      content: "support@foundcloud.com",
+      content: "foundcloudchat@gmail.com",
       link: "mailto:support@foundcloud.com"
     },
     {
       icon: Phone,
       title: "Phone",
-      content: "+1 (555) 123-4567",
+      content: "+(251) 980256702",
       link: "tel:+15551234567"
     },
     {
       icon: MapPin,
       title: "Address",
-      content: "WSU Campus, Building 123, Room 456",
+      content: "WSU Campus",
       link: null
     }
   ]

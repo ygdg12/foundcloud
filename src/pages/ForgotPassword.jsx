@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, ArrowLeft, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Mail, ArrowLeft, Loader2, CheckCircle, AlertCircle, Lock } from "lucide-react";
 
 const BASE_URL =
   import.meta.env?.VITE_BASE_URL ||
@@ -11,23 +11,12 @@ const BASE_URL =
 
 const LOGO_SRC = "/foundcloud white.svg";
 
-export default function ResetPassword() {
+export default function ForgotPassword() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: "",
-    code: "",
-    newPassword: "",
-  });
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setError("");
-    setSuccess("");
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,17 +25,13 @@ export default function ResetPassword() {
     setSuccess("");
 
     try {
-      const res = await fetch(`${BASE_URL}/api/auth/reset-password-with-code`, {
+      const res = await fetch(`${BASE_URL}/api/auth/request-password-reset-code`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          email: formData.email.trim(),
-          code: formData.code.trim(),
-          newPassword: formData.newPassword,
-        }),
+        body: JSON.stringify({ email: email.trim() }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -55,24 +40,21 @@ export default function ResetPassword() {
         const msg =
           data?.message ||
           data?.error ||
-          (res.status === 404
-            ? "User not found"
-            : res.status === 400
-            ? "Invalid or expired reset code"
-            : "Failed to reset password");
+          (res.status === 400
+            ? "Invalid email address"
+            : res.status === 404
+            ? "User not found with this email"
+            : "Failed to submit password reset request");
         throw new Error(msg);
       }
 
       setSuccess(
-        data?.message || "Password updated successfully. You can now sign in with your new password."
+        data?.message ||
+          "Password reset request submitted. Please wait for an admin to generate a reset code for you."
       );
-
-      setTimeout(() => {
-        navigate("/signin", { replace: true });
-      }, 1500);
     } catch (err) {
-      console.error("Reset password error:", err);
-      setError(err.message || "Failed to reset password. Please try again.");
+      console.error("Forgot password error:", err);
+      setError(err.message || "Failed to submit password reset request. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -104,9 +86,9 @@ export default function ResetPassword() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-[#850303] rounded-2xl mb-6 shadow-lg">
             <Lock className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h2 className="text-2xl font-bold text-card-foreground mb-2">Reset Password</h2>
+          <h2 className="text-2xl font-bold text-card-foreground mb-2">Forgot Password</h2>
           <p className="text-muted-foreground text-sm">
-            Enter your email, the reset code provided by an admin, and your new password.
+            Enter your email and we’ll submit a reset request. An admin will generate a reset code for you.
           </p>
         </div>
 
@@ -134,49 +116,11 @@ export default function ResetPassword() {
                 id="email"
                 name="email"
                 type="email"
-                value={formData.email}
-                onChange={handleChange}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
                 placeholder="you@example.com"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="code">
-              Reset code
-            </label>
-            <div className="relative">
-              <input
-                id="code"
-                name="code"
-                type="text"
-                value={formData.code}
-                onChange={handleChange}
-                required
-                className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
-                placeholder="Enter the code from your admin"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="newPassword">
-              New password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                id="newPassword"
-                name="newPassword"
-                type="password"
-                value={formData.newPassword}
-                onChange={handleChange}
-                required
-                minLength={8}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
-                placeholder="Enter a new password (min 8 characters)"
               />
             </div>
           </div>
@@ -189,20 +133,20 @@ export default function ResetPassword() {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Updating password...</span>
+                <span>Submitting request...</span>
               </>
             ) : (
               <>
                 <Lock className="w-4 h-4" />
-                <span>Reset password</span>
+                <span>Submit Reset Request</span>
               </>
             )}
           </button>
 
           <p className="text-xs text-center text-gray-500 mt-3">
-            Remember your password?{" "}
-            <Link to="/signin" className="text-[#850303] hover:underline font-medium">
-              Go back to sign in
+            Already have a code?{" "}
+            <Link to="/reset-password" className="text-[#850303] hover:underline font-medium">
+              Reset password with code
             </Link>
           </p>
         </form>
