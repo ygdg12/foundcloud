@@ -259,7 +259,20 @@ export default function LostItems() {
     navigate("/signin")
   }
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    let next = value
+    if (["title", "location", "category", "color", "brand", "size"].includes(name)) {
+      next = next.replace(/\s+/g, " ")
+    }
+    if (name === "uniqueIdentifier") {
+      next = next.replace(/[^\w\-#@./ ]/g, "").slice(0, 60)
+    }
+    if (name === "description" || name === "additionalDetails") {
+      next = next.replace(/\s+/g, " ")
+    }
+    setFormData((prev) => ({ ...prev, [name]: next }))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -296,6 +309,27 @@ export default function LostItems() {
     const digitsOnly = contactPhone.replace(/[^\d]/g, "")
     if (contactPhone && (digitsOnly.length < 10 || digitsOnly.length > 15)) {
       showNotification("Please enter a valid phone number (10-15 digits)", "error")
+      setLoading(false)
+      return
+    }
+
+    // Description constraints
+    if (description.length < 15) {
+      showNotification("Description must be at least 15 characters long", "error")
+      setLoading(false)
+      return
+    }
+    if (description.length > 600) {
+      showNotification("Description is too long. Please keep it under 600 characters.", "error")
+      setLoading(false)
+      return
+    }
+
+    // Prevent future dates
+    const today = new Date()
+    const lostDate = new Date(dateLost)
+    if (lostDate > today) {
+      showNotification("Date lost cannot be in the future", "error")
       setLoading(false)
       return
     }

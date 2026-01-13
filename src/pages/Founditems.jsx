@@ -269,7 +269,24 @@ export default function FoundItems() {
     navigate("/signin")
   }
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    // Basic sanitization to avoid irrelevant / noisy data
+    let next = value
+    if (["title", "location", "category"].includes(name)) {
+      // Strip leading/trailing spaces and collapse multiple spaces
+      next = next.replace(/\s+/g, " ")
+    }
+    if (name === "uniqueIdentifier") {
+      // Limit to reasonable length and disallow emojis/control chars
+      next = next.replace(/[^\w\-#@./ ]/g, "").slice(0, 60)
+    }
+    if (name === "description") {
+      // Trim but allow punctuation; we'll enforce length in validation
+      next = next.replace(/\s+/g, " ")
+    }
+    setFormData((prev) => ({ ...prev, [name]: next }))
+  }
 
   const handleImageChange = (e) => setImages(Array.from(e.target.files))
 
@@ -311,9 +328,23 @@ export default function FoundItems() {
       return
     }
 
-    // Validate description length (minimum 10 characters)
-    if (description.length < 10) {
-      showNotification("Description must be at least 10 characters long", "error")
+    // Validate description length (minimum 15, max 600 characters)
+    if (description.length < 15) {
+      showNotification("Description must be at least 15 characters long", "error")
+      setLoading(false)
+      return
+    }
+    if (description.length > 600) {
+      showNotification("Description is too long. Please keep it under 600 characters.", "error")
+      setLoading(false)
+      return
+    }
+
+    // Prevent future dates
+    const today = new Date()
+    const foundDate = new Date(dateFound)
+    if (foundDate > today) {
+      showNotification("Date found cannot be in the future", "error")
       setLoading(false)
       return
     }

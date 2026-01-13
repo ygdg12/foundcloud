@@ -436,152 +436,253 @@ export default function SecurityOfficer() {
             )}
 
             {view === "claims" && (
-              <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-black">Claims</h2>
-                  <div className="flex items-center gap-2">
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Claims list */}
+                <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-black">Claims</h2>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={fetchClaims}
+                        className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
+                      >
+                        Refresh
+                      </button>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="mb-4 p-3 rounded-md bg-red-50 text-red-700 border border-red-200 text-sm">
+                      {error}
+                    </div>
+                  )}
+
+                  {loading ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
+                      <p className="mt-4 text-gray-600">Loading claims...</p>
+                    </div>
+                  ) : claims.length === 0 ? (
+                    <p className="text-center py-12 text-gray-600">No claims to review</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {claims.map((claim) => {
+                        const claimId = claim._id || claim.id
+                        const item =
+                          typeof claim.item === "object"
+                            ? claim.item
+                            : typeof claim.itemId === "object"
+                            ? claim.itemId
+                            : null
+                        const claimUniqueId = item?.uniqueIdentifier
+                        // Check if this identifier matches any found item
+                        const hasMatchingItem =
+                          claimUniqueId &&
+                          foundItems.some(
+                            (fi) =>
+                              fi.uniqueIdentifier &&
+                              fi.uniqueIdentifier.toLowerCase() === claimUniqueId.toLowerCase()
+                          )
+                        return (
+                          <div
+                            key={claimId}
+                            className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                              hasMatchingItem ? "border-green-400 bg-green-50/30" : "border-gray-200"
+                            }`}
+                          >
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-base sm:text-lg font-semibold text-black mb-2 break-words">
+                                  {item?.title || "Item Claim"}
+                                </h3>
+                                <div
+                                  className={`mb-3 p-3 rounded-lg border ${
+                                    hasMatchingItem
+                                      ? "bg-green-100 border-green-300"
+                                      : "bg-blue-50 border-blue-200"
+                                  }`}
+                                >
+                                  {/* Unique Identifier intentionally hidden in claims view */}
+                                </div>
+                                <p className="text-gray-600 mb-2">{item?.description || "N/A"}</p>
+                                <div className="mb-3 p-3 rounded-lg border bg-purple-50 border-purple-200">
+                                  <p className="text-sm font-semibold text-purple-900 mb-1">
+                                    Ownership Proof:
+                                  </p>
+                                  <p className="text-sm text-purple-800 break-words">
+                                    {claim.ownershipProof || "N/A"}
+                                  </p>
+                                </div>
+                                <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+                                  <span>
+                                    <strong>Status:</strong>{" "}
+                                  </span>
+                                  <span
+                                    className={`px-2 py-1 rounded text-xs font-medium ${
+                                      claim.status === "approved"
+                                        ? "bg-green-100 text-green-800"
+                                        : claim.status === "rejected"
+                                        ? "bg-red-100 text-red-800"
+                                        : "bg-yellow-100 text-yellow-800"
+                                    }`}
+                                  >
+                                    {claim.status || "pending"}
+                                  </span>
+                                  {claim.claimant && (
+                                    <span>
+                                      <strong>Claimant:</strong>{" "}
+                                      {typeof claim.claimant === "object"
+                                        ? claim.claimant.name
+                                        : claim.claimantName || "N/A"}
+                                    </span>
+                                  )}
+                                  {claim.claimantEmail && (
+                                    <span>
+                                      <strong>Email:</strong> {claim.claimantEmail}
+                                    </span>
+                                  )}
+                                  {claim.createdAt && (
+                                    <span>
+                                      <strong>Submitted:</strong>{" "}
+                                      {new Date(claim.createdAt).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                                {claim.status === "pending" ? (
+                                  <>
+                                    <button
+                                      disabled={updatingId === claimId}
+                                      onClick={() => updateClaimStatus(claimId, "approved")}
+                                      className="px-2 sm:px-3 py-1.5 rounded-md bg-green-600 text-white text-xs sm:text-sm disabled:opacity-60 whitespace-nowrap"
+                                    >
+                                      {updatingId === claimId ? "Updating..." : "Approve"}
+                                    </button>
+                                    <button
+                                      disabled={updatingId === claimId}
+                                      onClick={() => updateClaimStatus(claimId, "rejected")}
+                                      className="px-2 sm:px-3 py-1.5 rounded-md bg-red-600 text-white text-xs sm:text-sm disabled:opacity-60 whitespace-nowrap"
+                                    >
+                                      {updatingId === claimId ? "Updating..." : "Reject"}
+                                    </button>
+                                    {actionStatus[claimId] && (
+                                      <span
+                                        className={`text-sm font-medium ${
+                                          actionStatus[claimId] === "approved"
+                                            ? "text-green-700"
+                                            : "text-red-700"
+                                        }`}
+                                      >
+                                        {actionStatus[claimId] === "approved"
+                                          ? "Approved"
+                                          : "Rejected"}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span
+                                    className={`text-sm font-semibold ${
+                                      claim.status === "approved" ? "text-green-700" : "text-red-700"
+                                    }`}
+                                  >
+                                    {claim.status === "approved" ? "Approved" : "Rejected"}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Found items context panel */}
+                <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-black">Found Items</h2>
                     <button
-                      onClick={fetchClaims}
+                      onClick={fetchFoundItems}
                       className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
                     >
                       Refresh
                     </button>
                   </div>
-                </div>
 
-                {error && (
-                  <div className="mb-4 p-3 rounded-md bg-red-50 text-red-700 border border-red-200 text-sm">
-                    {error}
-                  </div>
-                )}
+                  {foundLoading ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
+                      <p className="mt-4 text-gray-600">Loading found items...</p>
+                    </div>
+                  ) : foundItems.length === 0 ? (
+                    <p className="text-center py-12 text-gray-600">No found items available</p>
+                  ) : (
+                    <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+                      {foundItems.map((item) => {
+                        const itemId = item._id || item.id
+                        const itemUniqueId = item.uniqueIdentifier
 
-                {loading ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading claims...</p>
-                  </div>
-                ) : claims.length === 0 ? (
-                  <p className="text-center py-12 text-gray-600">No claims to review</p>
-                ) : (
-                  <div className="space-y-4">
-                    {claims.map((claim) => {
-                      const claimId = claim._id || claim.id
-                      const item =
-                        typeof claim.item === "object" ? claim.item : typeof claim.itemId === "object" ? claim.itemId : null
-                      const claimUniqueId = item?.uniqueIdentifier
-                      // Check if this identifier matches any found item
-                      const hasMatchingItem =
-                        claimUniqueId &&
-                        foundItems.some(
-                          (fi) => fi.uniqueIdentifier && fi.uniqueIdentifier.toLowerCase() === claimUniqueId.toLowerCase()
-                        )
-                      return (
-                        <div
-                          key={claimId}
-                          className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
-                            hasMatchingItem ? "border-green-400 bg-green-50/30" : "border-gray-200"
-                          }`}
-                        >
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-base sm:text-lg font-semibold text-black mb-2 break-words">
-                                {item?.title || "Item Claim"}
-                              </h3>
-                              <div
-                                className={`mb-3 p-3 rounded-lg border ${
-                                  hasMatchingItem ? "bg-green-100 border-green-300" : "bg-blue-50 border-blue-200"
-                                }`}
-                              >
-                                {/* Unique Identifier intentionally hidden in claims view */}
-                              </div>
-                              <p className="text-gray-600 mb-2">{item?.description || "N/A"}</p>
-                              <div className="mb-3 p-3 rounded-lg border bg-purple-50 border-purple-200">
-                                <p className="text-sm font-semibold text-purple-900 mb-1">Ownership Proof:</p>
-                                <p className="text-sm text-purple-800 break-words">
-                                  {claim.ownershipProof || "N/A"}
-                                </p>
-                              </div>
-                              <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-                                <span>
-                                  <strong>Status:</strong>{" "}
-                                </span>
-                                <span
-                                  className={`px-2 py-1 rounded text-xs font-medium ${
-                                    claim.status === "approved"
-                                      ? "bg-green-100 text-green-800"
-                                      : claim.status === "rejected"
-                                      ? "bg-red-100 text-red-800"
-                                      : "bg-yellow-100 text-yellow-800"
-                                  }`}
-                                >
-                                  {claim.status || "pending"}
-                                </span>
-                                {claim.claimant && (
-                                  <span>
-                                    <strong>Claimant:</strong>{" "}
-                                    {typeof claim.claimant === "object"
-                                      ? claim.claimant.name
-                                      : claim.claimantName || "N/A"}
-                                  </span>
-                                )}
-                                {claim.claimantEmail && (
-                                  <span>
-                                    <strong>Email:</strong> {claim.claimantEmail}
-                                  </span>
-                                )}
-                                {claim.createdAt && (
-                                  <span>
-                                    <strong>Submitted:</strong>{" "}
-                                    {new Date(claim.createdAt).toLocaleDateString()}
-                                  </span>
-                                )}
-                              </div>
+                        const images = Array.isArray(item.images)
+                          ? item.images
+                          : item.images
+                          ? [item.images]
+                          : []
+                        const mainImage = images[0]
+                        const imgSrc = buildImageUrl(mainImage) || PLACEHOLDER_IMG
+
+                        return (
+                          <div
+                            key={itemId}
+                            className="flex gap-3 border border-gray-200 rounded-xl p-3 bg-gray-50"
+                          >
+                            <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                              <img
+                                src={imgSrc}
+                                alt={item.title || "Found item image"}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                onError={(e) => {
+                                  e.currentTarget.src = PLACEHOLDER_IMG
+                                }}
+                              />
                             </div>
-                            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                              {claim.status === "pending" ? (
-                                <>
-                                  <button
-                                    disabled={updatingId === claimId}
-                                    onClick={() => updateClaimStatus(claimId, "approved")}
-                                    className="px-2 sm:px-3 py-1.5 rounded-md bg-green-600 text-white text-xs sm:text-sm disabled:opacity-60 whitespace-nowrap"
-                                  >
-                                    {updatingId === claimId ? "Updating..." : "Approve"}
-                                  </button>
-                                  <button
-                                    disabled={updatingId === claimId}
-                                    onClick={() => updateClaimStatus(claimId, "rejected")}
-                                    className="px-2 sm:px-3 py-1.5 rounded-md bg-red-600 text-white text-xs sm:text-sm disabled:opacity-60 whitespace-nowrap"
-                                  >
-                                    {updatingId === claimId ? "Updating..." : "Reject"}
-                                  </button>
-                                  {actionStatus[claimId] && (
-                                    <span
-                                      className={`text-sm font-medium ${
-                                        actionStatus[claimId] === "approved"
-                                          ? "text-green-700"
-                                          : "text-red-700"
-                                      }`}
-                                    >
-                                      {actionStatus[claimId] === "approved" ? "Approved" : "Rejected"}
-                                    </span>
-                                  )}
-                                </>
-                              ) : (
-                                <span
-                                  className={`text-sm font-semibold ${
-                                    claim.status === "approved" ? "text-green-700" : "text-red-700"
-                                  }`}
-                                >
-                                  {claim.status === "approved" ? "Approved" : "Rejected"}
-                                </span>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-semibold text-black line-clamp-2">
+                                {item.title || "Untitled item"}
+                              </h3>
+                              {itemUniqueId && (
+                                <p className="mt-0.5 text-[11px] font-mono text-blue-700 bg-blue-50 inline-block px-2 py-0.5 rounded">
+                                  ID: {itemUniqueId}
+                                </p>
                               )}
+                              <p className="mt-1 text-xs text-gray-700 line-clamp-2">
+                                {item.description || "No description provided."}
+                              </p>
+                              <div className="mt-1 flex flex-wrap gap-1 text-[11px] text-gray-600">
+                                {item.category && (
+                                  <span className="px-2 py-0.5 rounded bg-white border border-gray-200">
+                                    {item.category}
+                                  </span>
+                                )}
+                                {(item.locationFound || item.location) && (
+                                  <span className="px-2 py-0.5 rounded bg-white border border-gray-200">
+                                    {item.locationFound || item.location}
+                                  </span>
+                                )}
+                                {item.dateFound && (
+                                  <span>
+                                    {new Date(item.dateFound).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
