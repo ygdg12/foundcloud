@@ -52,15 +52,15 @@ export default function Admin() {
     if (authLoading) return
 
     if (!isAuthenticated || !authUser) {
-      navigate("/signin", { replace: true })
-      return
-    }
+          navigate("/signin", { replace: true })
+          return
+        }
 
     const normalizedRole = authUser.role === "staff" ? "security" : authUser.role
     if (normalizedRole !== "admin") {
-      navigate("/signin", { replace: true })
-      return
-    }
+            navigate("/signin", { replace: true })
+            return
+          }
 
     setUser(authUser)
   }, [authUser, authLoading, isAuthenticated, navigate])
@@ -281,13 +281,12 @@ export default function Admin() {
         setUserToDelete(null)
       } else {
         const data = await response.json()
-        alert(data.message || "Failed to delete user")
+        console.error("Failed to delete user:", data.message || "Unknown error")
         setShowDeleteModal(false)
         setUserToDelete(null)
       }
     } catch (error) {
       console.error("Error deleting user:", error)
-      alert("Error deleting user")
       setShowDeleteModal(false)
       setUserToDelete(null)
     }
@@ -370,15 +369,13 @@ export default function Admin() {
           fetchVerificationCodes()
         } else {
           console.error("Invalid code format received:", data)
-          alert(`Failed to generate verification code: Invalid response format. Received: ${JSON.stringify(data)}`)
         }
       } else {
         const errorData = await response.json()
-        alert(errorData.message || "Failed to generate verification code")
+        console.error("Failed to generate verification code:", errorData.message || "Unknown error")
       }
     } catch (error) {
       console.error("Error generating verification code:", error)
-      alert("Error generating verification code")
     }
   }
 
@@ -408,13 +405,12 @@ export default function Admin() {
         setCodeToDelete(null)
       } else {
         const data = await response.json()
-        alert(data.message || "Failed to delete verification code")
+        console.error("Failed to delete verification code:", data.message || "Unknown error")
         setShowDeleteCodeModal(false)
         setCodeToDelete(null)
       }
     } catch (error) {
       console.error("Error deleting verification code:", error)
-      alert("Error deleting verification code")
       setShowDeleteCodeModal(false)
       setCodeToDelete(null)
     }
@@ -426,8 +422,9 @@ export default function Admin() {
   }
 
   const copyCodeToClipboard = (code) => {
-    navigator.clipboard.writeText(code)
-    alert("Code copied to clipboard!")
+    navigator.clipboard.writeText(code).catch((err) =>
+      console.error("Failed to copy code to clipboard:", err)
+    )
   }
 
   const handleLogout = () => {
@@ -458,8 +455,8 @@ export default function Admin() {
                 {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
               <div className="h-10 w-10 md:h-12 md:w-12">
-                <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-contain" loading="lazy" />
-              </div>
+                  <img src={LOGO_SRC} alt="FoundCloud logo" className="h-full w-full object-contain" loading="lazy" />
+                </div>
               <div>
                 <h1 className="text-lg md:text-xl font-bold">Admin Portal</h1>
                 <p className="text-xs md:text-sm text-red-200">Welcome, {user?.name || "Admin"}</p>
@@ -691,14 +688,14 @@ export default function Admin() {
                 <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Users Management</h2>
                 <p className="text-sm md:text-base text-gray-600">Manage and approve pending user accounts</p>
               </div>
-              <button
+                <button 
                 onClick={fetchUsers}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
                 disabled={loading}
-              >
+                >
                 <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
-              </button>
+                </button>
             </div>
             {loading ? (
               <div className="text-center py-12">
@@ -775,7 +772,6 @@ export default function Admin() {
                                         if (!res.ok) {
                                           throw new Error(data.message || "Failed to approve user")
                                         }
-                                        alert("User approved successfully")
                                         setUsers((prev) =>
                                           prev.map((userItem) =>
                                             (userItem._id || userItem.id) === userId
@@ -785,7 +781,6 @@ export default function Admin() {
                                         )
                                       } catch (err) {
                                         console.error("Error approving user:", err)
-                                        alert(err.message || "Error approving user")
                                       }
                                     }}
                                     className="px-3 py-1 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition"
@@ -819,7 +814,6 @@ export default function Admin() {
                                         if (!res.ok) {
                                           throw new Error(data.message || "Failed to reject user")
                                         }
-                                        alert("User rejected successfully")
                                         setUsers((prev) =>
                                           prev.map((userItem) =>
                                             (userItem._id || userItem.id) === userId
@@ -829,7 +823,6 @@ export default function Admin() {
                                         )
                                       } catch (err) {
                                         console.error("Error rejecting user:", err)
-                                        alert(err.message || "Error rejecting user")
                                       }
                                     }}
                                     className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition"
@@ -838,12 +831,12 @@ export default function Admin() {
                                   </button>
                                 </>
                               )}
-                              <button
-                                onClick={() => handleDeleteClick(u)}
+                            <button
+                              onClick={() => handleDeleteClick(u)}
                                 className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition"
-                              >
-                                Remove
-                              </button>
+                            >
+                              Remove
+                            </button>
                             </div>
                           </td>
                         </tr>
@@ -1049,18 +1042,12 @@ export default function Admin() {
 
                                       const updatedReq = data.request || data
                                       const newCode = updatedReq.code || updatedReq.resetCode
-                                      if (newCode) {
-                                        alert(`Reset code for ${user.email || req.email}: ${newCode}`)
-                                      } else {
-                                        alert("Reset code generated successfully.")
-                                      }
 
                                       setResetRequests((prev) =>
                                         prev.map((r) => ( (r._id || r.id) === id ? { ...r, ...updatedReq } : r ))
                                       )
                                     } catch (err) {
                                       console.error("Error generating reset code:", err)
-                                      alert(err.message || "Error generating reset code")
                                     }
                                   }}
                                   className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition"
@@ -1072,8 +1059,9 @@ export default function Admin() {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    navigator.clipboard.writeText(code)
-                                    alert("Reset code copied to clipboard")
+                                    navigator.clipboard
+                                      .writeText(code)
+                                      .catch((err) => console.error("Failed to copy reset code:", err))
                                   }}
                                   className="px-3 py-1 rounded-lg bg-gray-200 text-gray-800 text-xs font-medium hover:bg-gray-300 transition"
                                 >
@@ -1316,7 +1304,7 @@ export default function Admin() {
         </main>
       </div>
 
-      {/* Generated Code Modal */}
+        {/* Generated Code Modal */}
         {showCodeModal && generatedCode && (typeof generatedCode === "string" || (generatedCode && typeof generatedCode === "object" && generatedCode.code)) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">

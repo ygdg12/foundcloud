@@ -206,7 +206,10 @@ export default function HomePage() {
               <p className="text-gray-600">
                 Don't have an account?{" "}
                 <button
-                  onClick={() => alert("Redirecting to sign up...")}
+                  onClick={() => {
+                    // Keep this button non-blocking; rely on navigation or future UX instead of alerts
+                    console.log("Redirecting to sign up...")
+                  }}
                   className="text-red-900 font-semibold hover:underline"
                 >
                   Sign up instead
