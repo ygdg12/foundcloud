@@ -111,7 +111,7 @@ export default function LostItems() {
   const [currentUser, setCurrentUser] = useState(null)
   const [foundFormItemId, setFoundFormItemId] = useState(null)
   const [foundUniqueIdInput, setFoundUniqueIdInput] = useState("")
-  const [foundImageFile, setFoundImageFile] = useState(null)
+  const [foundOwnershipProof, setFoundOwnershipProof] = useState("")
   const [foundSubmitting, setFoundSubmitting] = useState(false)
 
   // Get current user from localStorage and refresh on auth changes
@@ -250,34 +250,9 @@ export default function LostItems() {
     }
   }
 
-  const markLostItemFound = async (itemId, uniqueIdentifier, file) => {
-    const formData = new FormData()
-    formData.append("uniqueIdentifier", uniqueIdentifier)
-    formData.append("image", file)
-
-    const token = localStorage.getItem("authToken")
-    const headers = token
-      ? {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        }
-      : { "Content-Type": "multipart/form-data" }
-
-    const res = await axios.post(`${API_URL}/${itemId}/mark-found`, formData, {
-      headers,
-    })
-
-    return res.data // { message, item }
-  }
-
   const showNotification = (message, type) => {
     setNotification({ show: true, message, type })
     setTimeout(() => setNotification({ show: false, message: "", type: "" }), 4000)
-  }
-
-  const handleFoundFileChange = (e) => {
-    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null
-    setFoundImageFile(file)
   }
 
   const handleSubmitFound = async (e) => {
@@ -285,34 +260,57 @@ export default function LostItems() {
     if (!foundFormItemId) return
 
     const trimmedId = foundUniqueIdInput.trim()
-    if (!trimmedId || !foundImageFile) {
-      showNotification("Please enter the unique identifier and choose an image.", "error")
+    if (!trimmedId || !foundOwnershipProof.trim()) {
+      showNotification("Please confirm the unique identifier and describe how you found this item.", "error")
       return
     }
 
     try {
       setFoundSubmitting(true)
-      const data = await markLostItemFound(foundFormItemId, trimmedId, foundImageFile)
+
+      const token = localStorage.getItem("authToken")
+      if (!token) {
+        showNotification("Please sign in to submit a found report", "error")
+        return
+      }
+
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      }
+
+      const payload = {
+        item: foundFormItemId,
+        ownershipProof: `${foundOwnershipProof.trim()} (Found report, unique ID: ${trimmedId})`,
+        verificationAnswers: undefined,
+      }
+
+      const res = await fetch(CLAIMS_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to submit found report")
+      }
 
       showNotification(
         data.message ||
-          "Thank you. A security officer will review your report and update the claim status.",
+          "Thank you. A security officer will review your report and update the lost item claim status.",
         "success"
       )
 
-      // Refresh items so any backend changes (e.g. status, foundVerification) are reflected
-      fetchItems()
-
       setFoundFormItemId(null)
       setFoundUniqueIdInput("")
-      setFoundImageFile(null)
+      setFoundOwnershipProof("")
     } catch (err) {
       const msg =
         err.response?.data?.message ||
         err.message ||
-        "Failed to mark item as found"
+        "Failed to submit found report"
       showNotification(msg, "error")
-      console.error("Error marking lost item as found:", err)
+      console.error("Error submitting lost item found report:", err)
     } finally {
       setFoundSubmitting(false)
     }
@@ -1396,13 +1394,14 @@ export default function LostItems() {
                           </div>
                           <div className="space-y-1">
                             <label className="text-xs font-semibold text-black">
-                              Verification Image
+                              How do you know this is the correct item?
                             </label>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleFoundFileChange}
-                              className="w-full text-xs text-gray-700"
+                            <textarea
+                              value={foundOwnershipProof}
+                              onChange={(e) => setFoundOwnershipProof(e.target.value)}
+                              rows={3}
+                              className="w-full rounded-md border border-[#850303]/30 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#850303] focus:border-transparent"
+                              placeholder="Describe where you found it, and any matching details (color, brand, serial, etc.)."
                               required
                             />
                           </div>
@@ -1412,7 +1411,7 @@ export default function LostItems() {
                               onClick={() => {
                                 setFoundFormItemId(null)
                                 setFoundUniqueIdInput("")
-                                setFoundImageFile(null)
+                                setFoundOwnershipProof("")
                               }}
                               className="px-3 py-1.5 rounded-md border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
                             >
