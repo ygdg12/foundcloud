@@ -1368,7 +1368,7 @@ export default function LostItems() {
                         onClick={() => {
                           const id = item._id || item.id
                           setFoundFormItemId((current) => (current === id ? null : id))
-                          setFoundUniqueIdInput("")
+                          setFoundUniqueIdInput(item.uniqueIdentifier || "")
                           setFoundImageFile(null)
                         }}
                         className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-[#850303]/10 text-[#850303] text-sm font-semibold hover:bg-[#850303]/15 transition-colors"
@@ -1385,11 +1385,14 @@ export default function LostItems() {
                             <input
                               type="text"
                               value={foundUniqueIdInput}
-                              onChange={(e) => setFoundUniqueIdInput(e.target.value)}
-                              placeholder="Enter the unique ID shown on the poster"
+                              readOnly
+                              placeholder="Auto-filled from the lost item post"
                               className="w-full rounded-md border border-[#850303]/30 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#850303] focus:border-transparent"
                               required
                             />
+                            <p className="text-[11px] text-gray-600">
+                              This is the unique identifier from the lost item post. If it doesn’t match what you see on the item, cancel and don’t submit.
+                            </p>
                           </div>
                           <div className="space-y-1">
                             <label className="text-xs font-semibold text-black">
