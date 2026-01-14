@@ -113,10 +113,19 @@ export const AuthProvider = ({ children }) => {
             return;
           }
           
-          // Normalize role (staff -> security)
-          const serverRole = fetchedUser.role === "staff" ? "security" : fetchedUser.role;
-          const allowedRoles = ["user", "security", "admin"];
-          const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user";
+          // Normalize role from backend (case-insensitive, map aliases)
+          const rawRole = (fetchedUser.role || "").toString().toLowerCase();
+          let normalizedRole = "user";
+          if (rawRole === "admin") {
+            normalizedRole = "admin";
+          } else if (
+            rawRole === "staff" ||
+            rawRole === "security" ||
+            rawRole === "security_officer" ||
+            rawRole === "security-officer"
+          ) {
+            normalizedRole = "security";
+          }
           const normalizedUser = { ...fetchedUser, role: normalizedRole };
           
           // Update localStorage with fresh data
@@ -148,10 +157,19 @@ export const AuthProvider = ({ children }) => {
         const parsedUser = JSON.parse(userData);
         console.log("checkAuth: Using cached user data:", parsedUser);
         
-        // Normalize role in cached data too
-        const serverRole = parsedUser.role === "staff" ? "security" : parsedUser.role;
-        const allowedRoles = ["user", "security", "admin"];
-        const normalizedRole = allowedRoles.includes(serverRole) ? serverRole : "user";
+        // Normalize role in cached data too (same rules as above)
+        const rawRole = (parsedUser.role || "").toString().toLowerCase();
+        let normalizedRole = "user";
+        if (rawRole === "admin") {
+          normalizedRole = "admin";
+        } else if (
+          rawRole === "staff" ||
+          rawRole === "security" ||
+          rawRole === "security_officer" ||
+          rawRole === "security-officer"
+        ) {
+          normalizedRole = "security";
+        }
         const normalizedUser = { ...parsedUser, role: normalizedRole };
         
         setUser(normalizedUser);

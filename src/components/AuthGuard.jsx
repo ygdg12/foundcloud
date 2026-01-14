@@ -41,9 +41,16 @@ const AuthGuard = ({ children, allowedRoles = [] }) => {
 
   console.log("AuthGuard: User authorized. Role:", user?.role)
 
-  // Normalize role for allowedRoles check
-  const normalizedRole = user?.role === "staff" ? "security" : user?.role
-  
+  // Normalize role for allowedRoles check (case-insensitive)
+  let normalizedRole = (user?.role || "").toString().toLowerCase()
+  if (
+    normalizedRole === "staff" ||
+    normalizedRole === "security_officer" ||
+    normalizedRole === "security-officer"
+  ) {
+    normalizedRole = "security"
+  }
+
   if (allowedRoles.length > 0 && !allowedRoles.includes(normalizedRole)) {
     console.log(
       "AuthGuard: User role not in allowed roles. User role:",

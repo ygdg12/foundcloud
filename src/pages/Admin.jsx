@@ -56,15 +56,24 @@ export default function Admin() {
     if (authLoading) return
 
     if (!isAuthenticated || !authUser) {
-          navigate("/signin", { replace: true })
-          return
-        }
+      navigate("/signin", { replace: true })
+      return
+    }
 
-    const normalizedRole = authUser.role === "staff" ? "security" : authUser.role
+    // Normalize role (case-insensitive) and treat staff/security_officer as security
+    let normalizedRole = (authUser.role || "").toString().toLowerCase()
+    if (
+      normalizedRole === "staff" ||
+      normalizedRole === "security" ||
+      normalizedRole === "security_officer" ||
+      normalizedRole === "security-officer"
+    ) {
+      normalizedRole = "security"
+    }
     if (normalizedRole !== "admin") {
-            navigate("/signin", { replace: true })
-            return
-          }
+      navigate("/signin", { replace: true })
+      return
+    }
 
     setUser(authUser)
   }, [authUser, authLoading, isAuthenticated, navigate])
@@ -692,15 +701,15 @@ export default function Admin() {
                 <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Users Management</h2>
                 <p className="text-sm md:text-base text-gray-600">Manage and approve pending user accounts</p>
               </div>
-              <button 
+                <button 
                 onClick={fetchUsers}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
                 disabled={loading}
-              >
+                >
                 <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
-              </button>
-            </div>
+                </button>
+              </div>
 
             {userAlert && (
               <div
@@ -715,8 +724,8 @@ export default function Admin() {
                   {userAlert.message && (
                     <p className="mt-1 text-xs md:text-sm leading-snug break-words">{userAlert.message}</p>
                   )}
-                </div>
-                <button
+              </div>
+                <button 
                   onClick={() => setUserAlert(null)}
                   className="ml-2 text-xs text-current hover:opacity-70 transition"
                   aria-label="Dismiss alert"
