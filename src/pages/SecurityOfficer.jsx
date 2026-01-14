@@ -141,7 +141,14 @@ export default function SecurityOfficer() {
         console.error("Failed to remove found item:", data.message || res.statusText)
         return
       }
-      setFoundItems((prev) => prev.filter((it) => (it._id || it.id) !== itemId))
+      setFoundItems((prev) =>
+        prev.filter((it) => {
+          const currentId = it._id || it.id
+          return currentId && itemId
+            ? String(currentId) !== String(itemId)
+            : true
+        })
+      )
     } catch (err) {
       console.error("Error removing found item:", err)
     }
@@ -166,7 +173,14 @@ export default function SecurityOfficer() {
         console.error("Failed to remove lost item:", data.message || res.statusText)
         return
       }
-      setLostItems((prev) => prev.filter((it) => (it._id || it.id) !== itemId))
+      setLostItems((prev) =>
+        prev.filter((it) => {
+          const currentId = it._id || it.id
+          return currentId && itemId
+            ? String(currentId) !== String(itemId)
+            : true
+        })
+      )
     } catch (err) {
       console.error("Error removing lost item:", err)
     }
