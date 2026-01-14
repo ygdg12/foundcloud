@@ -176,8 +176,17 @@ export default function Signup() {
   const validateForm = () => {
     const errors = {}
 
-    if (state.isSignup && !state.formData.name.trim()) {
-      errors.name = VALIDATION_RULES.NAME.message
+    if (state.isSignup) {
+      const name = state.formData.name.trim()
+      if (!name) {
+        errors.name = VALIDATION_RULES.NAME.message
+      } else {
+        const hasLetter = /[A-Za-z]/.test(name)
+        const allDigits = /^[0-9]+$/.test(name)
+        if (!hasLetter || allDigits) {
+          errors.name = "Name must include letters and cannot be only numbers"
+        }
+      }
     }
 
     if (!state.formData.email.trim()) {
