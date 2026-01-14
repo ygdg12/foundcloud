@@ -39,6 +39,10 @@ export default function Admin() {
   const [loading, setLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [userToDelete, setUserToDelete] = useState(null)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [userToReject, setUserToReject] = useState(null)
+  const [rejectReason, setRejectReason] = useState("")
+  const [userAlert, setUserAlert] = useState(null) // { type: 'success' | 'error', title, message }
   const [showCodeModal, setShowCodeModal] = useState(false)
   const [generatedCode, setGeneratedCode] = useState(null)
   const [codeToDelete, setCodeToDelete] = useState(null)
@@ -688,15 +692,39 @@ export default function Admin() {
                 <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">Users Management</h2>
                 <p className="text-sm md:text-base text-gray-600">Manage and approve pending user accounts</p>
               </div>
-                <button 
+              <button 
                 onClick={fetchUsers}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
                 disabled={loading}
-                >
+              >
                 <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
-                </button>
+              </button>
             </div>
+
+            {userAlert && (
+              <div
+                className={`mb-4 px-4 py-3 rounded-xl border flex items-start justify-between gap-3 ${
+                  userAlert.type === "success"
+                    ? "bg-green-50 border-green-200 text-green-800"
+                    : "bg-red-50 border-red-200 text-red-800"
+                }`}
+              >
+                <div className="flex-1">
+                  <p className="font-semibold text-sm md:text-base">{userAlert.title}</p>
+                  {userAlert.message && (
+                    <p className="mt-1 text-xs md:text-sm leading-snug break-words">{userAlert.message}</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setUserAlert(null)}
+                  className="ml-2 text-xs text-current hover:opacity-70 transition"
+                  aria-label="Dismiss alert"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
@@ -734,18 +762,26 @@ export default function Admin() {
                               {u.role}
                             </span>
                           </td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                status === "approved"
-                                  ? "bg-green-100 text-green-800"
-                                  : status === "rejected"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {status}
-                            </span>
+                          <td className="py-3 px-4 align-top">
+                            <div className="space-y-1">
+                              <span
+                                className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                                  status === "approved"
+                                    ? "bg-green-100 text-green-800"
+                                    : status === "rejected"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-yellow-100 text-yellow-800"
+                                }`}
+                              >
+                                {status}
+                              </span>
+                              {status === "rejected" && u.rejectionReason && (
+                                <div className="text-xs text-red-800 bg-red-50 border border-red-100 rounded-lg px-3 py-2 max-w-xs">
+                                  <p className="font-semibold mb-0.5">Rejection reason</p>
+                                  <p className="leading-snug break-words">{u.rejectionReason}</p>
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex flex-wrap gap-2">
@@ -775,12 +811,22 @@ export default function Admin() {
                                         setUsers((prev) =>
                                           prev.map((userItem) =>
                                             (userItem._id || userItem.id) === userId
-                                              ? { ...userItem, status: "approved" }
+                                              ? { ...userItem, status: "approved", rejectionReason: undefined }
                                               : userItem
                                           )
                                         )
+                                        setUserAlert({
+                                          type: "success",
+                                          title: `${u.name || "User"} has been approved`,
+                                          message: null,
+                                        })
                                       } catch (err) {
                                         console.error("Error approving user:", err)
+                                        setUserAlert({
+                                          type: "error",
+                                          title: "Failed to approve user",
+                                          message: err.message || "An unexpected error occurred while approving this user.",
+                                        })
                                       }
                                     }}
                                     className="px-3 py-1 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition"
@@ -788,42 +834,10 @@ export default function Admin() {
                                     Approve
                                   </button>
                                   <button
-                                    onClick={async () => {
-                                      const reason = prompt("Reason for rejection (optional):") || ""
-                                      if (reason === null) return // User cancelled
-                                      
-                                      try {
-                                        const token = localStorage.getItem("authToken")
-                                        const userId = u._id || u.id
-                                        const res = await fetch(
-                                          `${BASE_URL}/api/admin/users/${userId}/reject`,
-                                          {
-                                            method: "PATCH",
-                                            headers: {
-                                              Authorization: `Bearer ${token}`,
-                                              "Content-Type": "application/json",
-                                              Accept: "application/json",
-                                            },
-                                            mode: "cors",
-                                            body: JSON.stringify({
-                                              reason: reason || "Rejected by admin via dashboard",
-                                            }),
-                                          }
-                                        )
-                                        const data = await res.json().catch(() => ({}))
-                                        if (!res.ok) {
-                                          throw new Error(data.message || "Failed to reject user")
-                                        }
-                                        setUsers((prev) =>
-                                          prev.map((userItem) =>
-                                            (userItem._id || userItem.id) === userId
-                                              ? { ...userItem, status: "rejected" }
-                                              : userItem
-                                          )
-                                        )
-                                      } catch (err) {
-                                        console.error("Error rejecting user:", err)
-                                      }
+                                    onClick={() => {
+                                      setUserToReject(u)
+                                      setRejectReason("")
+                                      setShowRejectModal(true)
                                     }}
                                     className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition"
                                   >
@@ -1385,6 +1399,100 @@ export default function Admin() {
                   className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition"
                 >
                   Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reject User Modal */}
+        {showRejectModal && userToReject && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <h3 className="text-xl font-bold text-black mb-2">Reject User</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                You are about to reject{" "}
+                <span className="font-semibold">
+                  {userToReject.name} ({userToReject.email})
+                </span>
+                . Optionally provide a reason that will be stored with this account and shown in the admin panel.
+              </p>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Rejection reason <span className="font-normal text-gray-500">(optional but recommended)</span>
+              </label>
+              <textarea
+                className="w-full bg-white border-2 border-gray-200 rounded-xl px-3 py-2 text-sm text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition mb-4 resize-none"
+                rows={3}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Example: Details provided do not match our records."
+              />
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowRejectModal(false)
+                    setUserToReject(null)
+                    setRejectReason("")
+                  }}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!userToReject) return
+                    try {
+                      const token = localStorage.getItem("authToken")
+                      const userId = userToReject._id || userToReject.id
+                      const reasonToSend = (rejectReason || "").trim() || "Rejected by admin via dashboard"
+
+                      const res = await fetch(`${BASE_URL}/api/admin/users/${userId}/reject`, {
+                        method: "PATCH",
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                          "Content-Type": "application/json",
+                          Accept: "application/json",
+                        },
+                        mode: "cors",
+                        body: JSON.stringify({
+                          reason: reasonToSend,
+                        }),
+                      })
+
+                      const data = await res.json().catch(() => ({}))
+                      if (!res.ok) {
+                        throw new Error(data.message || "Failed to reject user")
+                      }
+
+                      setUsers((prev) =>
+                        prev.map((userItem) =>
+                          (userItem._id || userItem.id) === userId
+                            ? { ...userItem, status: "rejected", rejectionReason: reasonToSend }
+                            : userItem
+                        )
+                      )
+
+                      setUserAlert({
+                        type: "error",
+                        title: `${userToReject.name || "User"} has been rejected`,
+                        message: reasonToSend,
+                      })
+
+                      setShowRejectModal(false)
+                      setUserToReject(null)
+                      setRejectReason("")
+                    } catch (err) {
+                      console.error("Error rejecting user:", err)
+                      setUserAlert({
+                        type: "error",
+                        title: "Failed to reject user",
+                        message: err.message || "An unexpected error occurred while rejecting this user.",
+                      })
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition"
+                >
+                  Confirm Reject
                 </button>
               </div>
             </div>
