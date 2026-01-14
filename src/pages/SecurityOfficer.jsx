@@ -65,9 +65,23 @@ export default function SecurityOfficer() {
   const [lostItems, setLostItems] = useState([])
   const [lostLoading, setLostLoading] = useState(false)
   const [actionStatus, setActionStatus] = useState({}) // { [claimId]: 'approved' | 'rejected' }
-  const [view, setView] = useState("dashboard") // dashboard, claims, foundItems, lostItems
+  const [view, setView] = useState("dashboard") // dashboard, claims, lostClaims, foundItems, lostItems
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const navigate = useNavigate()
+
+  const getClaimItem = (claim) =>
+    typeof claim?.item === "object" ? claim.item : typeof claim?.itemId === "object" ? claim.itemId : null
+
+  const isLostItemClaim = (claim) => {
+    const item = getClaimItem(claim)
+    if (!item) return false
+    // Heuristic: lost items typically have dateLost/location; found items have dateFound/locationFound
+    if (item.dateLost) return true
+    if (item.location && !item.locationFound) return true
+    return false
+  }
+
+  const lostItemClaims = useMemo(() => claims.filter(isLostItemClaim), [claims])
 
   const fetchClaims = async () => {
     setLoading(true)
@@ -392,6 +406,21 @@ export default function SecurityOfficer() {
             >
               <FileCheck className="w-5 h-5" />
               <span>Claims</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setView("lostClaims")
+                setSidebarOpen(false)
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                view === "lostClaims"
+                  ? "bg-red-900 text-white shadow-md"
+                  : "text-gray-700 hover:bg-red-50 hover:text-red-900"
+              }`}
+            >
+              <AlertCircle className="w-5 h-5" />
+              <span>Lost Item Claims</span>
             </button>
 
             <button
@@ -747,6 +776,161 @@ export default function SecurityOfficer() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {view === "lostClaims" && (
+              <div className="bg-white rounded-2xl shadow-lg border border-[#850303]/10 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-black">Lost Item Claims</h2>
+                    <p className="text-sm text-gray-600">
+                      Claims linked to lost items only.
+                    </p>
+                  </div>
+                  <button
+                    onClick={fetchClaims}
+                    className="px-4 py-2 rounded-lg bg-[#850303] text-white text-sm font-medium hover:opacity-90 transition"
+                  >
+                    Refresh
+                  </button>
+                </div>
+
+                {error && (
+                  <div className="mb-4 p-3 rounded-md bg-red-50 text-red-700 border border-red-200 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#850303] mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Loading claims...</p>
+                  </div>
+                ) : lostItemClaims.length === 0 ? (
+                  <p className="text-center py-12 text-gray-600">No lost-item claims to review</p>
+                ) : (
+                  <div className="space-y-4">
+                    {lostItemClaims.map((claim) => {
+                      const claimId = claim._id || claim.id
+                      const item = getClaimItem(claim)
+                      const claimUniqueId = item?.uniqueIdentifier
+
+                      // Check if identifier matches any lost item (for quick confidence)
+                      const hasMatchingLostItem =
+                        claimUniqueId &&
+                        lostItems.some(
+                          (li) =>
+                            li.uniqueIdentifier &&
+                            li.uniqueIdentifier.toLowerCase() === claimUniqueId.toLowerCase()
+                        )
+
+                      return (
+                        <div
+                          key={claimId}
+                          className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                            hasMatchingLostItem ? "border-green-400 bg-green-50/30" : "border-gray-200"
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base sm:text-lg font-semibold text-black mb-2 break-words">
+                                {item?.title || "Lost Item Claim"}
+                              </h3>
+                              <p className="text-gray-600 mb-2">{item?.description || "N/A"}</p>
+
+                              <div className="mb-3 p-3 rounded-lg border bg-purple-50 border-purple-200">
+                                <p className="text-sm font-semibold text-purple-900 mb-1">Ownership Proof:</p>
+                                <p className="text-sm text-purple-800 break-words">
+                                  {claim.ownershipProof || "N/A"}
+                                </p>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+                                <span>
+                                  <strong>Status:</strong>{" "}
+                                </span>
+                                <span
+                                  className={`px-2 py-1 rounded text-xs font-medium ${
+                                    claim.status === "approved"
+                                      ? "bg-green-100 text-green-800"
+                                      : claim.status === "rejected"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-yellow-100 text-yellow-800"
+                                  }`}
+                                >
+                                  {claim.status || "pending"}
+                                </span>
+                                {item?.category && (
+                                  <span>
+                                    <strong>Category:</strong> {item.category}
+                                  </span>
+                                )}
+                                {item?.location && (
+                                  <span>
+                                    <strong>Location:</strong> {item.location}
+                                  </span>
+                                )}
+                                {item?.dateLost && (
+                                  <span>
+                                    <strong>Lost:</strong> {new Date(item.dateLost).toLocaleDateString()}
+                                  </span>
+                                )}
+                                {claim.claimant && (
+                                  <span>
+                                    <strong>Claimant:</strong>{" "}
+                                    {typeof claim.claimant === "object"
+                                      ? claim.claimant.name
+                                      : claim.claimantName || "N/A"}
+                                  </span>
+                                )}
+                                {claim.claimantEmail && (
+                                  <span>
+                                    <strong>Email:</strong> {claim.claimantEmail}
+                                  </span>
+                                )}
+                                {claim.createdAt && (
+                                  <span>
+                                    <strong>Submitted:</strong> {new Date(claim.createdAt).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                              {claim.status === "pending" ? (
+                                <>
+                                  <button
+                                    disabled={updatingId === claimId}
+                                    onClick={() => updateClaimStatus(claimId, "approved")}
+                                    className="px-2 sm:px-3 py-1.5 rounded-md bg-green-600 text-white text-xs sm:text-sm disabled:opacity-60 whitespace-nowrap"
+                                  >
+                                    {updatingId === claimId ? "Updating..." : "Approve"}
+                                  </button>
+                                  <button
+                                    disabled={updatingId === claimId}
+                                    onClick={() => updateClaimStatus(claimId, "rejected")}
+                                    className="px-2 sm:px-3 py-1.5 rounded-md bg-red-600 text-white text-xs sm:text-sm disabled:opacity-60 whitespace-nowrap"
+                                  >
+                                    {updatingId === claimId ? "Updating..." : "Reject"}
+                                  </button>
+                                </>
+                              ) : (
+                                <span
+                                  className={`text-sm font-semibold ${
+                                    claim.status === "approved" ? "text-green-700" : "text-red-700"
+                                  }`}
+                                >
+                                  {claim.status === "approved" ? "Approved" : "Rejected"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
