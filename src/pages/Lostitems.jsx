@@ -109,6 +109,10 @@ export default function LostItems() {
   const [showForm, setShowForm] = useState(false)
   const [viewMode, setViewMode] = useState("grid")
   const [currentUser, setCurrentUser] = useState(null)
+  const [foundFormItemId, setFoundFormItemId] = useState(null)
+  const [foundUniqueIdInput, setFoundUniqueIdInput] = useState("")
+  const [foundImageFile, setFoundImageFile] = useState(null)
+  const [foundSubmitting, setFoundSubmitting] = useState(false)
 
   // Get current user from localStorage and refresh on auth changes
   useEffect(() => {
@@ -246,9 +250,79 @@ export default function LostItems() {
     }
   }
 
+  const markLostItemFound = async (itemId, uniqueIdentifier, file) => {
+    const formData = new FormData()
+    formData.append("uniqueIdentifier", uniqueIdentifier)
+    formData.append("image", file)
+
+    const token = localStorage.getItem("authToken")
+    const headers = token
+      ? {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        }
+      : { "Content-Type": "multipart/form-data" }
+
+    const res = await axios.post(`${API_URL}/${itemId}/mark-found`, formData, {
+      headers,
+    })
+
+    return res.data // { message, item }
+  }
+
   const showNotification = (message, type) => {
     setNotification({ show: true, message, type })
     setTimeout(() => setNotification({ show: false, message: "", type: "" }), 4000)
+  }
+
+  const handleFoundFileChange = (e) => {
+    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null
+    setFoundImageFile(file)
+  }
+
+  const handleSubmitFound = async (e) => {
+    e.preventDefault()
+    if (!foundFormItemId) return
+
+    const trimmedId = foundUniqueIdInput.trim()
+    if (!trimmedId || !foundImageFile) {
+      showNotification("Please enter the unique identifier and choose an image.", "error")
+      return
+    }
+
+    try {
+      setFoundSubmitting(true)
+      const data = await markLostItemFound(foundFormItemId, trimmedId, foundImageFile)
+
+      showNotification(data.message || "Item marked as found.", "success")
+
+      if (data.item) {
+        const updated = data.item
+        setItems((prev) =>
+          (prev || []).map((it) => {
+            const currentId = it._id || it.id
+            const updatedId = updated._id || updated.id
+            return currentId && updatedId && String(currentId) === String(updatedId) ? { ...it, ...updated } : it
+          })
+        )
+      } else {
+        // Fallback: refresh list
+        fetchItems()
+      }
+
+      setFoundFormItemId(null)
+      setFoundUniqueIdInput("")
+      setFoundImageFile(null)
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to mark item as found"
+      showNotification(msg, "error")
+      console.error("Error marking lost item as found:", err)
+    } finally {
+      setFoundSubmitting(false)
+    }
   }
 
   const handleLogout = () => {
@@ -1260,6 +1334,98 @@ export default function LostItems() {
                       </div>
                     </div>
                   ) : null}
+                  {/* Found status and "I Found This Item" flow */}
+                  {item.status === "found" && (
+                    <div className="mt-4 p-4 border border-green-200 bg-green-50 rounded-xl space-y-3">
+                      <p className="text-sm font-semibold text-green-900">
+                        This item has been reported as found.
+                      </p>
+                      {item.foundVerification?.image && (
+                        <div className="mt-1">
+                          <img
+                            src={item.foundVerification.image}
+                            alt="Found verification"
+                            className="max-w-xs rounded-lg border border-green-200"
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
+                      {item.foundVerification?.reportedAt && (
+                        <p className="text-xs text-green-800">
+                          Reported at:{" "}
+                          {new Date(item.foundVerification.reportedAt).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {item.status !== "found" && (
+                    <div className="mt-4 border-t border-[#850303]/10 pt-4 space-y-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const id = item._id || item.id
+                          setFoundFormItemId((current) => (current === id ? null : id))
+                          setFoundUniqueIdInput("")
+                          setFoundImageFile(null)
+                        }}
+                        className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-[#850303]/10 text-[#850303] text-sm font-semibold hover:bg-[#850303]/15 transition-colors"
+                      >
+                        I Found This Item
+                      </button>
+
+                      {foundFormItemId && String(foundFormItemId) === String(item._id || item.id) && (
+                        <form onSubmit={handleSubmitFound} className="space-y-3 bg-[#850303]/5 rounded-lg p-3">
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-black">
+                              Unique Identifier
+                            </label>
+                            <input
+                              type="text"
+                              value={foundUniqueIdInput}
+                              onChange={(e) => setFoundUniqueIdInput(e.target.value)}
+                              placeholder="Enter the unique ID shown on the poster"
+                              className="w-full rounded-md border border-[#850303]/30 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#850303] focus:border-transparent"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-black">
+                              Verification Image
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFoundFileChange}
+                              className="w-full text-xs text-gray-700"
+                              required
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFoundFormItemId(null)
+                                setFoundUniqueIdInput("")
+                                setFoundImageFile(null)
+                              }}
+                              className="px-3 py-1.5 rounded-md border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={foundSubmitting}
+                              className="px-3 py-1.5 rounded-md bg-[#850303] text-white text-xs font-semibold hover:bg-[#700202] disabled:opacity-60 transition-colors"
+                            >
+                              {foundSubmitting ? "Submitting..." : "Submit"}
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+                  )}
+
                   {/* Update button - only show for owner */}
                   {currentUser && item.reportedBy && (() => {
                     const reportedById = typeof item.reportedBy === "object" ? (item.reportedBy._id || item.reportedBy.id) : item.reportedBy
