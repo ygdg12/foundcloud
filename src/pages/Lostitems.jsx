@@ -1367,7 +1367,7 @@ export default function LostItems() {
                           const id = item._id || item.id
                           setFoundFormItemId((current) => (current === id ? null : id))
                           setFoundUniqueIdInput(item.uniqueIdentifier || "")
-                          setFoundImageFile(null)
+                          
                         }}
                         className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-[#850303]/10 text-[#850303] text-sm font-semibold hover:bg-[#850303]/15 transition-colors"
                       >
