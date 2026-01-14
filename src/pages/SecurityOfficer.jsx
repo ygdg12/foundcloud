@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { LayoutDashboard, Package, AlertCircle, FileCheck, LogOut, Home, Menu, X } from "lucide-react"
+import { LayoutDashboard, Package, AlertCircle, FileCheck, LogOut, Home, Menu, X, Trash2 } from "lucide-react"
 
 const LOGO_SRC = "/foundcloud white.svg"
 
@@ -119,6 +119,56 @@ export default function SecurityOfficer() {
       console.error("Error loading lost items:", err)
     } finally {
       setLostLoading(false)
+    }
+  }
+
+  const handleRemoveFoundItem = async (itemId) => {
+    if (!itemId) return
+    try {
+      const token = localStorage.getItem("authToken")
+      const res = await fetch(`${FOUND_ITEMS_URL}/${itemId}`, {
+        method: "DELETE",
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            }
+          : {},
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        console.error("Failed to remove found item:", data.message || res.statusText)
+        return
+      }
+      setFoundItems((prev) => prev.filter((it) => (it._id || it.id) !== itemId))
+    } catch (err) {
+      console.error("Error removing found item:", err)
+    }
+  }
+
+  const handleRemoveLostItem = async (itemId) => {
+    if (!itemId) return
+    try {
+      const token = localStorage.getItem("authToken")
+      const res = await fetch(`${LOST_ITEMS_URL}/${itemId}`, {
+        method: "DELETE",
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            }
+          : {},
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        console.error("Failed to remove lost item:", data.message || res.statusText)
+        return
+      }
+      setLostItems((prev) => prev.filter((it) => (it._id || it.id) !== itemId))
+    } catch (err) {
+      console.error("Error removing lost item:", err)
     }
   }
 
@@ -751,11 +801,20 @@ export default function SecurityOfficer() {
                                   </p>
                                 )}
                               </div>
-                              {item.status && (
-                                <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 font-medium">
-                                  {item.status}
-                                </span>
-                              )}
+                              <div className="flex flex-col items-end gap-2">
+                                {item.status && (
+                                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 font-medium">
+                                    {item.status}
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => handleRemoveFoundItem(itemId)}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-50 text-red-700 text-[11px] font-medium hover:bg-red-100 transition"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  <span>Remove</span>
+                                </button>
+                              </div>
                             </div>
 
                             <p className="text-sm text-gray-700 line-clamp-3">
@@ -862,11 +921,20 @@ export default function SecurityOfficer() {
                                   </p>
                                 )}
                               </div>
-                              {item.status && (
-                                <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 font-medium">
-                                  {item.status}
-                                </span>
-                              )}
+                              <div className="flex flex-col items-end gap-2">
+                                {item.status && (
+                                  <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 font-medium">
+                                    {item.status}
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => handleRemoveLostItem(itemId)}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-50 text-red-700 text-[11px] font-medium hover:bg-red-100 transition"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  <span>Remove</span>
+                                </button>
+                              </div>
                             </div>
 
                             <p className="text-sm text-gray-700 line-clamp-3">
