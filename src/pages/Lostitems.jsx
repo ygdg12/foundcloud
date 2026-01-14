@@ -172,6 +172,7 @@ export default function LostItems() {
   const [claimsLoading, setClaimsLoading] = useState(false)
   const [claimsError, setClaimsError] = useState("")
   const [showClaimsModal, setShowClaimsModal] = useState(false)
+  const [claimUpdatingId, setClaimUpdatingId] = useState(null)
 
   useEffect(() => {
     fetchItems()
@@ -196,6 +197,56 @@ export default function LostItems() {
       setUserClaims([])
     } finally {
       setClaimsLoading(false)
+    }
+  }
+
+  const updateUserClaimStatus = async (claimId, status) => {
+    if (!claimId || !status) return
+    setClaimUpdatingId(claimId)
+    try {
+      const token = localStorage.getItem("authToken")
+      if (!token) {
+        showNotification("Please sign in to update your claim", "error")
+        return
+      }
+
+      const url = `${BASE_URL}/api/claims/${claimId}`
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      })
+
+      const data = await response.json().catch(() => ({ message: "Failed to parse response" }))
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update claim")
+      }
+
+      setUserClaims((prev) =>
+        (prev || []).map((c) => {
+          const id = c._id || c.id
+          if (id && String(id) === String(claimId)) {
+            return { ...c, status, ...(data.claim || {}) }
+          }
+          return c
+        })
+      )
+
+      const message =
+        status === "approved"
+          ? "You have confirmed this is your item. Your claim is now approved."
+          : "You marked this item as not yours. Your claim has been updated."
+      showNotification(message, "success")
+    } catch (err) {
+      const msg = err.message || "Failed to update claim"
+      console.error("Error updating user claim:", err)
+      showNotification(msg, "error")
+    } finally {
+      setClaimUpdatingId(null)
     }
   }
 
@@ -860,7 +911,31 @@ export default function LostItems() {
                                 </div>
                               )}
                             </div>
-                            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClasses} self-start`}>{statusLabel}</div>
+                            <div className="flex flex-col items-end gap-2 self-start">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClasses}`}>
+                                {statusLabel}
+                              </span>
+                              {status === "pending" && (
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={claimUpdatingId === claimId}
+                                    onClick={() => updateUserClaimStatus(claimId, "approved")}
+                                    className="px-3 py-1 rounded-md bg-green-600 text-white text-xs font-medium hover:bg-green-700 disabled:opacity-60 transition-colors"
+                                  >
+                                    {claimUpdatingId === claimId ? "Updating..." : "This is my item"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={claimUpdatingId === claimId}
+                                    onClick={() => updateUserClaimStatus(claimId, "rejected")}
+                                    className="px-3 py-1 rounded-md bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-60 transition-colors"
+                                  >
+                                    {claimUpdatingId === claimId ? "Updating..." : "Not my item"}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )
