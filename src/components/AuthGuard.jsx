@@ -41,22 +41,36 @@ const AuthGuard = ({ children, allowedRoles = [] }) => {
 
   console.log("AuthGuard: User authorized. Role:", user?.role)
 
-  // Normalize role for allowedRoles check (case-insensitive)
-  let normalizedRole = (user?.role || "").toString().toLowerCase()
-  if (
-    normalizedRole === "staff" ||
-    normalizedRole === "security_officer" ||
-    normalizedRole === "security-officer"
-  ) {
-    normalizedRole = "security"
+  // Normalize role for allowedRoles check (case-insensitive, consistent with AuthContext)
+  // Use the same normalization logic as AuthContext
+  const normalizeRole = (rawRole) => {
+    if (!rawRole) return "user"
+    const role = rawRole.toString().toLowerCase().trim()
+    if (role === "admin") {
+      return "admin"
+    } else if (
+      role === "staff" ||
+      role === "security" ||
+      role === "security_officer" ||
+      role === "security-officer"
+    ) {
+      return "security"
+    }
+    return "user"
   }
+  
+  const normalizedRole = normalizeRole(user?.role)
+  console.log("AuthGuard: Normalized role:", normalizedRole, "from raw role:", user?.role)
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(normalizedRole)) {
+  // Normalize allowedRoles to lowercase for comparison
+  const normalizedAllowedRoles = allowedRoles.map(role => role.toString().toLowerCase().trim())
+  
+  if (allowedRoles.length > 0 && !normalizedAllowedRoles.includes(normalizedRole)) {
     console.log(
       "AuthGuard: User role not in allowed roles. User role:",
       normalizedRole,
       "Allowed:",
-      allowedRoles
+      normalizedAllowedRoles
     )
     return <Navigate to="/unauthorized" replace />
   }

@@ -8,6 +8,23 @@ const BASE_URL =
 
 const AuthContext = createContext();
 
+// Centralized role normalization function (used consistently across the app)
+export const normalizeRole = (rawRole) => {
+  if (!rawRole) return "user";
+  const role = rawRole.toString().toLowerCase().trim();
+  if (role === "admin") {
+    return "admin";
+  } else if (
+    role === "staff" ||
+    role === "security" ||
+    role === "security_officer" ||
+    role === "security-officer"
+  ) {
+    return "security";
+  }
+  return "user";
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -114,18 +131,8 @@ export const AuthProvider = ({ children }) => {
           }
           
           // Normalize role from backend (case-insensitive, map aliases)
-          const rawRole = (fetchedUser.role || "").toString().toLowerCase();
-          let normalizedRole = "user";
-          if (rawRole === "admin") {
-            normalizedRole = "admin";
-          } else if (
-            rawRole === "staff" ||
-            rawRole === "security" ||
-            rawRole === "security_officer" ||
-            rawRole === "security-officer"
-          ) {
-            normalizedRole = "security";
-          }
+          const normalizedRole = normalizeRole(fetchedUser.role);
+          console.log("AuthContext: Normalized role from API:", normalizedRole, "from raw:", fetchedUser.role);
           const normalizedUser = { ...fetchedUser, role: normalizedRole };
           
           // Update localStorage with fresh data
@@ -158,18 +165,8 @@ export const AuthProvider = ({ children }) => {
         console.log("checkAuth: Using cached user data:", parsedUser);
         
         // Normalize role in cached data too (same rules as above)
-        const rawRole = (parsedUser.role || "").toString().toLowerCase();
-        let normalizedRole = "user";
-        if (rawRole === "admin") {
-          normalizedRole = "admin";
-        } else if (
-          rawRole === "staff" ||
-          rawRole === "security" ||
-          rawRole === "security_officer" ||
-          rawRole === "security-officer"
-        ) {
-          normalizedRole = "security";
-        }
+        const normalizedRole = normalizeRole(parsedUser.role);
+        console.log("AuthContext: Normalized role from cache:", normalizedRole, "from raw:", parsedUser.role);
         const normalizedUser = { ...parsedUser, role: normalizedRole };
         
         setUser(normalizedUser);
