@@ -109,10 +109,6 @@ export default function LostItems() {
   const [showForm, setShowForm] = useState(false)
   const [viewMode, setViewMode] = useState("grid")
   const [currentUser, setCurrentUser] = useState(null)
-  const [foundFormItemId, setFoundFormItemId] = useState(null)
-  const [foundUniqueIdInput, setFoundUniqueIdInput] = useState("")
-  const [foundOwnershipProof, setFoundOwnershipProof] = useState("")
-  const [foundSubmitting, setFoundSubmitting] = useState(false)
 
   // Get current user from localStorage and refresh on auth changes
   useEffect(() => {
@@ -253,67 +249,6 @@ export default function LostItems() {
   const showNotification = (message, type) => {
     setNotification({ show: true, message, type })
     setTimeout(() => setNotification({ show: false, message: "", type: "" }), 4000)
-  }
-
-  const handleSubmitFound = async (e) => {
-    e.preventDefault()
-    if (!foundFormItemId) return
-
-    const trimmedId = foundUniqueIdInput.trim()
-    if (!trimmedId || !foundOwnershipProof.trim()) {
-      showNotification("Please confirm the unique identifier and describe how you found this item.", "error")
-      return
-    }
-
-    try {
-      setFoundSubmitting(true)
-
-      const token = localStorage.getItem("authToken")
-      if (!token) {
-        showNotification("Please sign in to submit a found report", "error")
-        return
-      }
-
-      const headers = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      }
-
-      const payload = {
-        item: foundFormItemId,
-        ownershipProof: `${foundOwnershipProof.trim()} (Found report, unique ID: ${trimmedId})`,
-        verificationAnswers: undefined,
-      }
-
-      const res = await fetch(CLAIMS_URL, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to submit found report")
-      }
-
-      showNotification(
-        data.message ||
-          "Thank you. A security officer will review your report and update the lost item claim status.",
-        "success"
-      )
-
-      setFoundFormItemId(null)
-      setFoundUniqueIdInput("")
-      setFoundOwnershipProof("")
-    } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to submit found report"
-      showNotification(msg, "error")
-      console.error("Error submitting lost item found report:", err)
-    } finally {
-      setFoundSubmitting(false)
-    }
   }
 
   const handleLogout = () => {
@@ -708,16 +643,6 @@ export default function LostItems() {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            <button
-              onClick={() => setShowClaimsModal(true)}
-              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 border border-[#850303]/40 text-[#850303] rounded-lg font-semibold hover:bg-[#850303]/10 transition-all duration-200 text-sm sm:text-base"
-            >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="hidden sm:inline">Pending Claims</span>
-              <span className="sm:hidden">Claims</span>
-            </button>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-[#850303] text-white rounded-lg font-semibold hover:bg-[#700202] transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
@@ -1334,7 +1259,7 @@ export default function LostItems() {
                       </div>
                     </div>
                   ) : null}
-                  {/* Found status and "I Found This Item" flow */}
+                  {/* Found status */}
                   {item.status === "found" && (
                     <div className="mt-4 p-4 border border-green-200 bg-green-50 rounded-xl space-y-3">
                       <p className="text-sm font-semibold text-green-900">
@@ -1355,77 +1280,6 @@ export default function LostItems() {
                           Reported at:{" "}
                           {new Date(item.foundVerification.reportedAt).toLocaleString()}
                         </p>
-                      )}
-                    </div>
-                  )}
-
-                  {item.status !== "found" && (
-                    <div className="mt-4 border-t border-[#850303]/10 pt-4 space-y-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const id = item._id || item.id
-                          setFoundFormItemId((current) => (current === id ? null : id))
-                          setFoundUniqueIdInput(item.uniqueIdentifier || "")
-                          
-                        }}
-                        className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-[#850303]/10 text-[#850303] text-sm font-semibold hover:bg-[#850303]/15 transition-colors"
-                      >
-                        I Found This Item
-                      </button>
-
-                      {foundFormItemId && String(foundFormItemId) === String(item._id || item.id) && (
-                        <form onSubmit={handleSubmitFound} className="space-y-3 bg-[#850303]/5 rounded-lg p-3">
-                          <div className="space-y-1">
-                            <label className="text-xs font-semibold text-black">
-                              Unique Identifier
-                            </label>
-                            <input
-                              type="text"
-                              value={foundUniqueIdInput}
-                              readOnly
-                              placeholder="Auto-filled from the lost item post"
-                              className="w-full rounded-md border border-[#850303]/30 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#850303] focus:border-transparent"
-                              required
-                            />
-                            <p className="text-[11px] text-gray-600">
-                              This is the unique identifier from the lost item post. If it doesn’t match what you see on the item, cancel and don’t submit.
-                            </p>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-xs font-semibold text-black">
-                              How do you know this is the correct item?
-                            </label>
-                            <textarea
-                              value={foundOwnershipProof}
-                              onChange={(e) => setFoundOwnershipProof(e.target.value)}
-                              rows={3}
-                              className="w-full rounded-md border border-[#850303]/30 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#850303] focus:border-transparent"
-                              placeholder="Describe where you found it, and any matching details (color, brand, serial, etc.)."
-                              required
-                            />
-                          </div>
-                          <div className="flex justify-end gap-2 pt-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFoundFormItemId(null)
-                                setFoundUniqueIdInput("")
-                                setFoundOwnershipProof("")
-                              }}
-                              className="px-3 py-1.5 rounded-md border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              disabled={foundSubmitting}
-                              className="px-3 py-1.5 rounded-md bg-[#850303] text-white text-xs font-semibold hover:bg-[#700202] disabled:opacity-60 transition-colors"
-                            >
-                              {foundSubmitting ? "Submitting..." : "Submit"}
-                            </button>
-                          </div>
-                        </form>
                       )}
                     </div>
                   )}

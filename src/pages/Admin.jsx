@@ -56,9 +56,9 @@ export default function Admin() {
     if (authLoading) return
 
     if (!isAuthenticated || !authUser) {
-      navigate("/signin", { replace: true })
-      return
-    }
+          navigate("/signin", { replace: true })
+          return
+        }
 
     // Normalize role (case-insensitive) and treat staff/security_officer as security
     let normalizedRole = (authUser.role || "").toString().toLowerCase()
@@ -71,9 +71,9 @@ export default function Admin() {
       normalizedRole = "security"
     }
     if (normalizedRole !== "admin") {
-      navigate("/signin", { replace: true })
-      return
-    }
+            navigate("/signin", { replace: true })
+            return
+          }
 
     setUser(authUser)
   }, [authUser, authLoading, isAuthenticated, navigate])
